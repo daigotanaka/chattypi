@@ -22,22 +22,25 @@
 
 import os
 
-class Speech2Text(object):
+from libs import Os
 
-    def __init__(self, sample_rate=16000):
+class Speech2Text(Os):
+
+    def __init__(self, user="", sample_rate=16000):
         self.sample_rate = sample_rate
+        super(Speech2Text, self).__init__(user)
 
     def convertToFlac(self, infile="/tmp/noise.wav", outfile="/tmp/noise.flac"):
         cmd = "/usr/bin/avconv "
         cmd += "-loglevel 0 "
         cmd += ("-i " + infile + " -ar " + str(self.sample_rate) + " " + outfile)
-        os.system(cmd)
+        self.system(cmd)
 
     def convertFlacToText(self, infile="/tmp/noise.flac", outfile="/tmp/stt.txt"):
         url = "http://www.google.com/speech-api/v1/recognize?lang=en-us&client=chromium"
         cmd = "/usr/bin/wget -q -U \"Mozilla/5.0\" --post-file " + infile + " --header \"Content-Type: audio/x-flac; rate=" + str(self.sample_rate) + "\" -O - \"" + url +  "\"| /usr/bin/cut -d\\\" -f12  > " + outfile
 
-        os.system(cmd)
+        self.system(cmd)
 
         f = open(outfile) 
         text = f.read()

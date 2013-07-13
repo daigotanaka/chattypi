@@ -28,6 +28,7 @@ import subprocess
 import urllib
 
 from addressbook import AddressBook
+from libs import Os
 from listener import Listener
 from phone import Twilio
 from speech2text import Speech2Text
@@ -38,7 +39,7 @@ import wolframalpha_search
 USR_BIN_PATH = config.get("system")["usr_bin"]
 DEFAULT_PATH = config.get("system")["default_path"]
  
-class StandBy(object):
+class StandBy(Os):
 
     def __init__(self):
         self.sleep = False
@@ -56,12 +57,12 @@ class StandBy(object):
         self.vol_total = 5
         self.vol_average = 1.0
         self.say_proc = None
-
+        
         self.clean_files()
 
-        self.addressbook = AddressBook(username=self.username, file=config.get("addressbook")["file"])
-        self.listener = Listener(sample_rate=self.sample_rate)
-        self.speech2text = Speech2Text(sample_rate=self.sample_rate) 
+        self.addressbook = AddressBook(user=self.username, file=config.get("addressbook")["file"])
+        self.listener = Listener(user=self.username, sample_rate=self.sample_rate)
+        self.speech2text = Speech2Text(user=self.username, sample_rate=self.sample_rate) 
         self.twitter = Twitter(
             consumer_key=config.get("twitter")["consumer_key"],
             consumer_secret=config.get("twitter")["consumer_secret"],
@@ -73,6 +74,8 @@ class StandBy(object):
             auth_token=config.get("twilio")["auth_token"]
         )
         self.wolframalpha = wolframalpha_search.WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
+
+        super(StandBy, self).__init__(self.username)
 
     def loop(self):
         self.exit_now = False
@@ -157,7 +160,7 @@ class StandBy(object):
             rest =  self.strip_command(text, "turn on")
 
             if rest.lower() == "vnc server":
-                os.system("sudo -u " + self.username +" /usr/bin/vncserver :1")
+                self.system("/usr/bin/vncserver :1")
                 message = "VNC server is on"
 
         elif text.lower() == "what is local ip":

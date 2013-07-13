@@ -20,13 +20,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
 import os
 
-class Listener(object):
+from libs import Os
 
-    def __init__(self, sample_rate=16000):
+class Listener(Os):
+
+    def __init__(self, user="", sample_rate=16000):
         self.sample_rate = sample_rate
+        super(Listener, self).__init__(user)
 
     def record_flac(self, file="/tmp/noise.flac", hw="plughw:1,0", duration=5, nullout=False):
         if os.path.exists(file):
@@ -45,7 +47,7 @@ class Listener(object):
 
         if nullout:
             cmd += " 1>>/tmp/voice.log 2>>/tmp/voice.log"
-        os.system(cmd)
+        self.system(cmd)
 
     def record_wav(self, file="/tmp/noise.wav", hw="plughw:1,0", duration=5, nullout=False):
         if os.path.exists(file):
@@ -60,11 +62,11 @@ class Listener(object):
         cmd += " -r "+ str(self.sample_rate) + " " + file
         if nullout:
             cmd += " 1>>/tmp/voice.log 2>>/tmp/voice.log"
-        os.system(cmd)
+        self.system(cmd)
 
     def get_volume(self, file="/tmp/noise.flac"):
         cmd = "/usr/bin/sox " + file + " -n stats -s 16 2>&1 | /usr/bin/awk '/^Max\\ level/ {print $3}' > /tmp/volume.txt"
-        os.system(cmd)
+        self.system(cmd)
         f = open("/tmp/volume.txt")
         output = f.read()
         vol = float(output)

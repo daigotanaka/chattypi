@@ -23,15 +23,18 @@
 import os
 import simplejson
 
-class AddressBook(object):
+from libs import Os
 
-    def __init__(self, username, file):
+
+class AddressBook(Os):
+
+    def __init__(self, user, file):
         self.file = file
-        self.username = username
         self.book = {}
         if os.path.exists(file):
             with open(file, "r") as f:
                 self.book = simplejson.loads(f.read())
+        super(AddressBook, self).__init__(user)
 
     def get_by_nickname(self, nickname):
         return self.book.get(nickname, None)
@@ -39,7 +42,7 @@ class AddressBook(object):
     def add(self, nickname, phone, email=""):
         self.book[nickname] = {"phone": phone, "email": email}
         if os.path.exists(self.file):
-            os.system("sudo -u " + self.username + " cp " + self.file + " " + self.file + "_bak")
+            self.system("cp " + self.file + " " + self.file + "_bak")
         with open(self.file, "w") as f:
             f.write(simplejson.dumps(self.book))
 
