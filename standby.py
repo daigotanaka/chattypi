@@ -388,7 +388,7 @@ class StandBy(object):
             return
         try:
             self.twilio.send_sms(contact["phone"], self.my_phone, body)
-        exception Exception, err:
+        except Exception, err:
             self.say("I got an error sending text message")
         self.say("The message was sent")
 
