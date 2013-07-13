@@ -35,8 +35,8 @@ from twitter import Twitter
 import wolframalpha_search
 
 
-USR_BIN_PATH = "/usr/bin"
-DEFAULT_PATH = "/home/pi/voice"
+USR_BIN_PATH = config.get("system")["usr_bin"]
+DEFAULT_PATH = config.get("system")["default_path"]
  
 class StandBy(object):
 

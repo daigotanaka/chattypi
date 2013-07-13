@@ -31,8 +31,12 @@ DEBUG = boolean(default=True)
 nickname = string(max=32, default="computer")
 username = string(max=32, default="pi")
 
+[system]
+usr_bin = string(max=1024, default="/usr/bin")
+default_path = string(max=1024, default="/home/pi/chattypi")
+
 [addressbook]
-file = string(max=1024, default="/home/pi/addressbook.json")
+file = string(max=1024, default="/home/pi/chattypi/addressbook.json")
 
 [audio]
 sample_rate = integer(16000, 48000, default=8000)
