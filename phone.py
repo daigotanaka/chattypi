@@ -33,9 +33,10 @@ class Twilio(object):
         self.client.sms.messages.create(to=to_, from_=from_, body=message)
 
 if __name__ == "__main__":
-    twilio = Twilio(account_sid="ACb42e4460dab52fa3617f05ede8d46575",
-        auth_token="e9fab1f02b419c80c3d1c96e658d15a2")
+    from config import config
+    twilio = Twilio(account_sid=config.get("twilio")["account_sid"],
+        auth_token=config.get("twilio")["auth_token"])
     try:
-        twilio.send_sms(to_="4143678666", from_="6505572500", message="test")
+        twilio.send_sms(to_="0000000000", from_="1111111111", message="test")
     except Exception, err:
         print err
