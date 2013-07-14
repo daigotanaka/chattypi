@@ -39,26 +39,27 @@ default_path = string(max=1024, default="/home/pi/chattypi")
 file = string(max=1024, default="/home/pi/chattypi/addressbook.json")
 
 [audio]
+has_pulse = boolean(default=False)
+out_device = integer(0, 1, default=0)
+in_device = string(max=256, default="plughw:1,0")
 sample_rate = integer(16000, 48000, default=8000)
 threshold = float(0.0, 20.0, default=0)
 min_volume = float(0.0, 10.0, default=0)
 idle_duration = float(1.0, 5.0, default=2.0)
 take_order_duration = float(2.0, 10.0, default=6.0)
-in_device = integer(0, 1, default=1)
-out_device = integer(0, 1, default=1)
 
 [twilio]
-account_sid = string(max=255)
-auth_token = string(max=255)
+account_sid = string(max=256)
+auth_token = string(max=256)
 
 [twitter]
-consumer_key = string(max=255)
-consumer_secret = string(max=255)
-access_key = string(max=255)
-access_secret= string(max=255)
+consumer_key = string(max=256)
+consumer_secret = string(max=256)
+access_key = string(max=256)
+access_secret= string(max=256)
 
 [wolframalpha]
-api_id = string(max=255)
+api_id = string(max=256)
 """
 
 configspec = CONFIGSPEC.split("\n")

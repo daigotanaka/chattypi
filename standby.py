@@ -56,8 +56,14 @@ class StandBy(Os):
         self.vol_samples = 5
         self.vol_total = 5
         self.vol_average = 1.0
-        self.say_proc = None
-        
+        self.sound_proc = None
+
+        out_device = str(config.get("audio")["out_device"])
+        self.audio_out_device = (
+            "pulse::" + out_device if config.get("audio")["has_pulse"]
+            else "alsa:device=hw=" + out_device + ",0")
+        self.audio_in_device = str(config.get("audio")["in_device"])
+
         self.clean_files()
 
         self.addressbook = AddressBook(user=self.username, file=config.get("addressbook")["file"])
@@ -105,11 +111,10 @@ class StandBy(Os):
 
         if self.sleep:
             print "Zzz..."
-            return
 
-        print "yes?"
-        self.play_sound("wav/yes_q.wav")
-        #self.play_sound("wav/beep-7.wav")
+        else:
+            print "yes?"
+            self.play_sound("wav/yes_q.wav")
 
         text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
         if not text:
@@ -232,35 +237,29 @@ class StandBy(Os):
                 os.remove(file)
 
     def play_sound(self, file, nowait=False):
-        cmd = (os.path.join(USR_BIN_PATH, "aplay")
-            + " -D plughw:" + str(config.get("audio")["out_device"]) + ",0"
-            + " -q " + os.path.join(DEFAULT_PATH, file))
+        if self.sound_proc:
+            self.sound_proc.wait()
+
+        cmd = "/usr/bin/mplayer" + " -ao " + self.audio_out_device + " -really-quiet " + file
+
         if nowait:
-           self.say_proc = subprocess.Popen(cmd.split(" "))
-           return
+            self.sound_proc = subprocess.Popen((cmd).split(" "))
+            return
 
         os.system(cmd)
 
     def say(self, text, nowait=False):
-           if self.say_proc:
-               self.say_proc.wait()
-           param = urllib.urlencode({"tl": "en", "q": text})
-           cmd = ("/usr/bin/mplayer"
-               + " -ao alsa:device=hw=" + str(config.get("audio")["out_device"]) + ",0"
-               + " -really-quiet")
-
-           url = "http://translate.google.com/translate_tts?" + param
-
-           if nowait:
-               self.say_proc = subprocess.Popen((cmd + " " + url).split(" "))
-               return
-
-           os.system(cmd + " \"" + url + "\"")
+        param = urllib.urlencode({"tl": "en", "q": text})
+        url = "http://translate.google.com/translate_tts?" + param
+        if not nowait:
+            url = "\"" + url + "\""
+        return self.play_sound(url)
 
     def get_volume(self, duration=1.0):
         if os.path.exists(self.flac_file):
             os.remove(self.flac_file)
-        self.listener.record_flac(hw="plughw:" + str(config.get("audio")["in_device"]) + ",0", duration=duration)
+
+        self.listener.record_flac(hw=self.audio_in_device, duration=duration)
         return self.listener.get_volume(file=self.flac_file)
 
     def is_loud(self, vol):
@@ -276,7 +275,7 @@ class StandBy(Os):
         text = ""
         if os.path.exists(self.flac_file):
             os.remove(self.flac_file)
-        self.listener.record_flac(hw="plughw:" + str(config.get("audio")["in_device"]) + ",0", duration=duration)
+        self.listener.record_flac(hw=self.audio_in_device, duration=duration)
         vol = self.listener.get_volume(self.flac_file)
         self.current_volume = vol
 
