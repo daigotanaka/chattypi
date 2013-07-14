@@ -69,7 +69,7 @@ class Listener(Os):
         self.system(cmd)
         f = open("/tmp/volume.txt")
         output = f.read()
-        vol = float(output)
+        vol = float(output) if output else -1.0
         return vol
 
 if __name__ == "__main__":

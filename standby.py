@@ -57,11 +57,8 @@ class StandBy(Os):
         self.vol_total = 5
         self.vol_average = 1.0
         self.sound_proc = None
+        self.is_mic_down = False
 
-        out_device = str(config.get("audio")["out_device"])
-        self.audio_out_device = (
-            "pulse::" + out_device if config.get("audio")["has_pulse"]
-            else "alsa:device=hw=" + out_device + ",0")
         self.audio_in_device = str(config.get("audio")["in_device"])
 
         self.clean_files()
@@ -82,6 +79,12 @@ class StandBy(Os):
         self.wolframalpha = wolframalpha_search.WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
 
         super(StandBy, self).__init__(self.username)
+
+    @property
+    def audio_out_device(self):
+        out_device = str(config.get("audio")["out_device"])
+        return ("pulse::" + out_device if config.get("audio")["has_pulse"]
+            else "alsa:device=hw=" + out_device + ",0")
 
     def loop(self):
         self.exit_now = False
@@ -260,7 +263,16 @@ class StandBy(Os):
             os.remove(self.flac_file)
 
         self.listener.record_flac(hw=self.audio_in_device, duration=duration)
-        return self.listener.get_volume(file=self.flac_file)
+        vol = self.listener.get_volume(file=self.flac_file)
+        if vol < 0:
+            if self.is_mic_down == False:
+                self.say("Microphone is busy or down")
+                self.is_mic_down = True
+            return 0.0
+        if self.is_mic_down == True:
+            self.say("Microphone is up")
+            self.is_mic_down = False
+        return vol
 
     def is_loud(self, vol):
         if (self.min_volume< vol
