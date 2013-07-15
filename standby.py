@@ -36,12 +36,12 @@ from twitter import Twitter
 import wolframalpha_search
 
 
-USR_BIN_PATH = config.get("system")["usr_bin"]
-DEFAULT_PATH = config.get("system")["default_path"]
- 
 class StandBy(Os):
 
     def __init__(self):
+        self.usr_bin_path = config.get("system")["usr_bin"]
+        self.default_path = config.get("system")["default_path"]
+ 
         self.sleep = False
         self.exist_now = False
         self.nickname = config.get("nickname")
@@ -168,7 +168,7 @@ class StandBy(Os):
             rest =  self.strip_command(text, "turn on")
 
             if rest.lower() == "vnc server":
-                self.system("/usr/bin/vncserver :1")
+                self.system(os.path.join(self.usr_bin_path, "vncserver") + " :1")
                 message = "VNC server is on"
 
         elif text.lower() == "what is local ip":
@@ -239,11 +239,12 @@ class StandBy(Os):
             if os.path.exists(file):
                 os.remove(file)
 
-    def play_sound(self, file, nowait=False):
+    def play_sound(self, file="", url="", nowait=False):
+        file = os.path.join(self.default_path, file) if not url else url
         if self.sound_proc:
             self.sound_proc.wait()
 
-        cmd = "/usr/bin/mplayer" + " -ao " + self.audio_out_device + " -really-quiet " + file
+        cmd = os.path.join(self.usr_bin_path, "mplayer") + " -ao " + self.audio_out_device + " -really-quiet " + file
 
         if nowait:
             self.sound_proc = subprocess.Popen((cmd).split(" "))
@@ -256,7 +257,7 @@ class StandBy(Os):
         url = "http://translate.google.com/translate_tts?" + param
         if not nowait:
             url = "\"" + url + "\""
-        return self.play_sound(url)
+        return self.play_sound(url=url)
 
     def get_volume(self, duration=1.0):
         if os.path.exists(self.flac_file):
