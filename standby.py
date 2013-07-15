@@ -240,7 +240,8 @@ class StandBy(Os):
                 os.remove(file)
 
     def play_sound(self, file="", url="", nowait=False):
-        file = os.path.join(self.default_path, file) if not url else url
+        file = (os.path.join(self.default_path, file) if not url
+            else "\"" + url + "\"")
         if self.sound_proc:
             self.sound_proc.wait()
 
@@ -256,7 +257,8 @@ class StandBy(Os):
         param = urllib.urlencode({"tl": "en", "q": text})
         url = "http://translate.google.com/translate_tts?" + param
         if not nowait:
-            url = "\"" + url + "\""
+            self.play_sound(url=url, nowait=nowait)
+            return
         return self.play_sound(url=url)
 
     def get_volume(self, duration=1.0):
