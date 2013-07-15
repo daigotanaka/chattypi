@@ -204,11 +204,12 @@ class StandBy(Os):
             self.send_sms(nickname)
             return
 
-        commands = ["search", "what is", "what's", "who is", "where is"]
-        command = self.is_command(text, commands)
-        if command:
-            self.search(command, text)
-            return
+        else:
+            commands = ["search", "what is", "what's", "who is", "where is"]
+            command = self.is_command(text, commands)
+            if command:
+                self.search(command, text)
+                return
  
         print message 
         self.say(message)
