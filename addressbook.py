@@ -47,7 +47,7 @@ class AddressBook(Os):
                 for row in reader:
                     if count == 0:
                         self.fields = row
-                    nickname = row[self.fields.index(self.nickname_field)]
+                    nickname = row[self.fields.index(self.nickname_field)].lower()
                     if not nickname:
                         continue
                     self.book[nickname] = row

@@ -204,7 +204,7 @@ class StandBy(Os):
             self.send_sms(nickname)
             return
 
-        commands = ["search", "what is", "what's", "who is"]
+        commands = ["search", "what is", "what's", "who is", "where is"]
         command = self.is_command(text, commands)
         if command:
             self.search(command, text)
@@ -390,7 +390,7 @@ class StandBy(Os):
         """
 
     def send_sms(self, nickname):
-        phone = self.addressbook.get_primary_phone(nickname)
+        phone = self.addressbook.get_primary_phone(nickname.lower())
         if not phone:
             self.say("Sorry, I cannot find the contact")
             return
