@@ -36,7 +36,7 @@ usr_bin = string(max=1024, default="/usr/bin")
 default_path = string(max=1024, default="/home/pi/chattypi")
 
 [addressbook]
-file = string(max=1024, default="/home/pi/chattypi/addressbook.json")
+file = string(max=1024, default="/home/pi/chattypi/addressbook.csv")
 
 [audio]
 has_pulse = boolean(default=False)

@@ -20,8 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import codecs
+import csv
 import os
-import simplejson
+import re
 
 from libs import Os
 
@@ -29,26 +31,48 @@ from libs import Os
 class AddressBook(Os):
 
     def __init__(self, user, file):
+        self.nickname_field = "Nickname"
+        self.primary_phone_field = "Phone 1 - Value"
         self.file = file
         self.book = {}
-        if os.path.exists(file):
-            with open(file, "r") as f:
-                self.book = simplejson.loads(f.read())
+        if not os.path.exists(file):
+            raise Exception("Address book file not found")
+
+        data = codecs.open(file, "rU", "utf-16")
+        reader = csv.reader(data)
+        count = 0
+        err = True
+        while err:
+            try:
+                for row in reader:
+                    if count == 0:
+                        self.fields = row
+                    nickname = row[self.fields.index(self.nickname_field)]
+                    if not nickname:
+                        continue
+                    self.book[nickname] = row
+                    count += 1
+            except UnicodeError:
+                err = True
+                continue
+            err = False
         super(AddressBook, self).__init__(user)
 
-    def get_by_nickname(self, nickname):
+    def get_field_index(self, field_name):
+        return self.fields.index(field_name)
+
+    def get_row(self, nickname):
         return self.book.get(nickname, None)
 
-    def add(self, nickname, phone, email=""):
-        self.book[nickname] = {"phone": phone, "email": email}
-        if os.path.exists(self.file):
-            self.system("cp " + self.file + " " + self.file + "_bak")
-        with open(self.file, "w") as f:
-            f.write(simplejson.dumps(self.book))
-
+    def get_primary_phone(self, nickname):
+        row = self.get_row(nickname)
+        if not row:
+            return None
+        raw_phone = row[self.get_field_index(self.primary_phone_field)]
+        number = re.sub("\D", "", raw_phone)
+        return number
  
 if __name__ == "__main__":
-    addressbook = AddressBook("pi", "./addressbook.json")
-    addressbook.add("monkey", "9999999999", "monkey@monkey.com")
-    info = addressbook.get_by_nickname("monkey")
+    addressbook = AddressBook("pi", "./addressbook.csv")
+    info = addressbook.get_primary_phone("my wife")
     print info

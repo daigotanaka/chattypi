@@ -357,6 +357,9 @@ class StandBy(Os):
         self.twitter.tweet(status)
 
     def add_contact(self):
+        self.say("This feature is currently unsupported")
+
+        """
         self.say("What is the contact's nick name?")
         nickname = self.listen_once(duration=7.0)
         print nickname
@@ -382,12 +385,14 @@ class StandBy(Os):
                 return
         self.addressbook.add(nickname, number)
         self.say("The phone number " + " ".join(number) + " for " + nickname + " was added.")
+        """
 
     def send_sms(self, nickname):
-        contact = self.addressbook.get_by_nickname(nickname)
-        if not contact:
+        phone = self.addressbook.get_primary_phone(nickname)
+        if not phone:
             self.say("Sorry, I cannot find the contact")
             return
+        print phone
         self.say("What message do you want me to send?")
         body = self.listen_once(duration=7.0)
         print body
@@ -402,7 +407,7 @@ class StandBy(Os):
             self.say("Canceled")
             return
         try:
-            self.twilio.send_sms(contact["phone"], self.my_phone, body)
+            self.twilio.send_sms(phone, self.my_phone, body)
         except Exception, err:
             self.say("I got an error sending text message")
         self.say("The message was sent")
