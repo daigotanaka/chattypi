@@ -29,8 +29,8 @@ class Twilio(object):
         self.account_token = auth_token
         self.client = TwilioRestClient(account_sid, auth_token)
 
-    def send_sms(self, to_, from_, message):
-        self.client.sms.messages.create(to=to_, from_=from_, body=message)
+    def send_sms(self, to_, from_, body):
+        self.client.sms.messages.create(to=to_, from_=from_, body=body)
 
 if __name__ == "__main__":
     from config import config

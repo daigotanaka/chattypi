@@ -424,14 +424,15 @@ class StandBy(Os):
             if not body:
                 self.say("Sorry.")
                 return
-        if not self.confirm("The message, " + body + " will be sent to " + nickname + " " + to_ + ". Is that OK?"):
+        to_verbal = " ".join(to_) if via == "sms" else to_
+        if not self.confirm("The message, " + body + " will be sent to " + nickname + " " + to_verbal + ". Is that OK?"):
             self.say("Cancelled")
             return
         try:
             if via == "sms":
                 self.twilio.send_sms(to_=to_, from_=self.my_phone, body=body)
             else:
-                self.mailgun.send_email(to_, from_=self.my_email, body=body)
+                self.mailgun.send_email(to_=to_, from_=self.my_email, body=body)
         except Exception, err:
             self.say("I got an error sending message")
             return
