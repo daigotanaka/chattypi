@@ -434,6 +434,7 @@ class StandBy(Os):
                 self.mailgun.send_email(to_, from_=self.my_email, body=body)
         except Exception, err:
             self.say("I got an error sending message")
+            return
         self.say("The message was sent")
 
 if __name__ == "__main__":
