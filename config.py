@@ -48,6 +48,11 @@ min_volume = float(0.0, 10.0, default=0)
 idle_duration = float(1.0, 5.0, default=2.0)
 take_order_duration = float(2.0, 10.0, default=6.0)
 
+[mailgun]
+api_key = string(max=256)
+mailgun_url = string(max=256, default="https://api.mailgun.net/v2")
+mailgun_domain = string(max=256)
+
 [twilio]
 account_sid = string(max=256)
 auth_token = string(max=256)
