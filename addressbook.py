@@ -33,12 +33,12 @@ class AddressBook(Os):
     def __init__(self, user, file):
         self.nickname_field = "Nickname"
         self.primary_phone_field = "Phone 1 - Value"
+        self.primary_email_field = "E-mail 1 - Value"
         self.file = file
         self.book = {}
         if not os.path.exists(file):
             raise Exception("Address book file not found")
-
-        data = codecs.open(file, "rU", "utf-16")
+        data = open(file)
         reader = csv.reader(data)
         count = 0
         err = True
@@ -52,7 +52,8 @@ class AddressBook(Os):
                         continue
                     self.book[nickname] = row
                     count += 1
-            except UnicodeError:
+            except UnicodeError, what:
+                print what
                 err = True
                 continue
             err = False
@@ -71,8 +72,16 @@ class AddressBook(Os):
         raw_phone = row[self.get_field_index(self.primary_phone_field)]
         number = re.sub("\D", "", raw_phone)
         return number
+
+    def get_primary_email(self, nickname):
+        row = self.get_row(nickname)
+        if not row:
+            return None
+        email = row[self.get_field_index(self.primary_email_field)]
+        return email
  
 if __name__ == "__main__":
     addressbook = AddressBook("pi", "./addressbook.csv")
+    print addressbook.fields
     info = addressbook.get_primary_phone("my wife")
     print info

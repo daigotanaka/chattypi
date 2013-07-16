@@ -28,6 +28,7 @@ import subprocess
 import urllib
 
 from addressbook import AddressBook
+from email_utils import Mailgun
 from libs import Os
 from listener import Listener
 from phone import Twilio
@@ -52,6 +53,7 @@ class StandBy(Os):
         self.idle_duration = config.get("audio")["idle_duration"]
         self.take_order_duration = config.get("audio")["take_order_duration"]
         self.my_phone = config.get("twilio")["from_phone"]
+        self.my_email = config.get("email")
         self.flac_file = "/tmp/noise.flac"
         self.vol_samples = 5
         self.vol_total = 5
@@ -76,6 +78,9 @@ class StandBy(Os):
             account_sid=config.get("twilio")["account_sid"],
             auth_token=config.get("twilio")["auth_token"]
         )
+        self.mailgun = Mailgun(
+            api_key=config.get("mailgun")["api_key"],
+            mailgun_domain=config.get("mailgun")["mailgun_domain"])
         self.wolframalpha = wolframalpha_search.WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
 
         super(StandBy, self).__init__(self.username)
@@ -201,7 +206,12 @@ class StandBy(Os):
 
         elif self.is_command(text, ["send text to"]):
             nickname = self.strip_command(text, "send text to")
-            self.send_sms(nickname)
+            self.send_message("sms", nickname)
+            return
+
+        elif self.is_command(text, ["send email to"]):
+            nickname = self.strip_command(text, "send email to")
+            self.send_message("email", nickname)
             return
 
         else:
@@ -334,7 +344,11 @@ class StandBy(Os):
     def confirm(self, message):
         self.say(message)
         text = self.listen_once(duration=3.0)
-        if not text:
+        print text
+        count = 0
+        while (count < 2
+            and (not text or (text.lower() != "yes" and text.lower() != "no"))):
+            count += 1
             self.say("Sorry, I could not catch that." + message)
             text = self.listen_once(duration=3.0)
         if text and text.lower() == "yes":
@@ -390,12 +404,13 @@ class StandBy(Os):
         self.say("The phone number " + " ".join(number) + " for " + nickname + " was added.")
         """
 
-    def send_sms(self, nickname):
-        phone = self.addressbook.get_primary_phone(nickname.lower())
-        if not phone:
+    def send_message(self, via, nickname):
+        to_ = (self.addressbook.get_primary_phone(nickname.lower())
+            if via == "sms" else self.addressbook.get_primary_email(nickname.lower()))
+        if not to_:
             self.say("Sorry, I cannot find the contact")
             return
-        print phone
+        print to_
         self.say("What message do you want me to send?")
         body = self.listen_once(duration=7.0)
         print body
@@ -406,13 +421,16 @@ class StandBy(Os):
             if not body:
                 self.say("Sorry.")
                 return
-        if not self.confirm("The message, " + body + " will be sent to " + nickname + ". Is that OK?"):
-            self.say("Canceled")
+        if not self.confirm("The message, " + body + " will be sent to " + nickname + " " + to_ + ". Is that OK?"):
+            self.say("Cancelled")
             return
         try:
-            self.twilio.send_sms(phone, self.my_phone, body)
+            if via == "sms":
+                self.twilio.send_sms(to_=to_, from_=self.my_phone, body=body)
+            else:
+                self.mailgun.send_email(to_, from_=self.my_email, body=body)
         except Exception, err:
-            self.say("I got an error sending text message")
+            self.say("I got an error sending message")
         self.say("The message was sent")
 
 if __name__ == "__main__":

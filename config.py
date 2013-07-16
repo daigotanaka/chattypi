@@ -30,6 +30,7 @@ DEBUG = boolean(default=True)
 
 nickname = string(max=32, default="computer")
 username = string(max=32, default="pi")
+email = string(max=256)
 
 [system]
 usr_bin = string(max=1024, default="/usr/bin")
