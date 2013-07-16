@@ -32,6 +32,7 @@ class AddressBook(Os):
 
     def __init__(self, user, file):
         self.nickname_field = "Nickname"
+        self.fullname_field = "Name"
         self.primary_phone_field = "Phone 1 - Value"
         self.primary_email_field = "E-mail 1 - Value"
         self.file = file
@@ -65,6 +66,12 @@ class AddressBook(Os):
     def get_row(self, nickname):
         return self.book.get(nickname, None)
 
+    def get_fullname(self, nickname):
+        row = self.get_row(nickname)
+        if not row:
+            return None
+        return row[self.get_field_index(self.fullname_field)]
+
     def get_primary_phone(self, nickname):
         row = self.get_row(nickname)
         if not row:
@@ -83,5 +90,7 @@ class AddressBook(Os):
 if __name__ == "__main__":
     addressbook = AddressBook("pi", "./addressbook.csv")
     print addressbook.fields
-    info = addressbook.get_primary_phone("my wife")
-    print info
+    name = addressbook.get_fullname("my wife")
+    phone = addressbook.get_primary_phone("my wife")
+    print name
+    print phone
