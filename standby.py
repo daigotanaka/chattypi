@@ -426,7 +426,8 @@ class StandBy(Os):
                 return
         to_verbal = " ".join(to_) if via == "sms" else to_
         name = self.addressbook.get_fullname(nickname)
-        if not self.confirm("The message, " + body + " will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
+        self.say("Your said, " + body)
+        if not self.confirm("The message will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
             self.say("Cancelled")
             return
         try:
