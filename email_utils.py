@@ -30,12 +30,12 @@ class Mailgun(object):
         self.mailgun_domain = mailgun_domain
         self.mailgun_url = mailgun_url
 
-    def send_email(self, to_, from_, message):
+    def send_email(self, to_, from_, body):
         params = {
             "to": to_,
             "from": from_,
-            "subject": message,
-            "text": message
+            "subject": body,
+            "text": body
         }
         response = requests.post(
             self.mailgun_url + "/" + self.mailgun_domain + "/" + "messages",

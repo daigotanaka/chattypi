@@ -342,6 +342,7 @@ class StandBy(Os):
         return s.getsockname()[0]
 
     def confirm(self, message):
+        print message
         self.say(message)
         text = self.listen_once(duration=3.0)
         print text
@@ -349,8 +350,10 @@ class StandBy(Os):
         while (count < 2
             and (not text or (text.lower() != "yes" and text.lower() != "no"))):
             count += 1
+            print message
             self.say("Sorry, I could not catch that." + message)
             text = self.listen_once(duration=3.0)
+            print text
         if text and text.lower() == "yes":
             return True
         return False
