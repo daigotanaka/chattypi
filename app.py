@@ -225,6 +225,7 @@ class Application(object):
 
         return
 
+        # TODO(daigo): Clean up the code below
         if text.lower() in ["go to sleep", "sleep"]:
             message = "Good night"
             self.sleep = True
