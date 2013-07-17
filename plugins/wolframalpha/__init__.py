@@ -24,7 +24,7 @@ import wolframalpha
 import sys
 
 
-def register():
+def register(app):
     from config import config
     global wra
     wra = WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])

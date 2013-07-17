@@ -23,7 +23,7 @@
 import requests
 
 
-def register():
+def register(app):
     from config import config
     global mailgun
     mailgun = Mailgun(

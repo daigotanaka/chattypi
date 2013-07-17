@@ -23,7 +23,7 @@
 from twilio.rest import TwilioRestClient
 
 
-def register():
+def register(app):
     from config import config
     global twilio
     twilio = Twilio(

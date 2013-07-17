@@ -22,6 +22,7 @@
 
 from config import config
 import os
+from pydispatch import dispatcher
 import re
 import socket
 import subprocess
@@ -34,19 +35,16 @@ from listener import Listener
 import plugins
 from speech2text import Speech2Text
 
-"""
-from email_utils import Mailgun
-from phone import Twilio
-from twitter import Twitter
-import wolframalpha_search
-"""
-
 
 class Application(object):
 
     def __init__(self):
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]
+
+        # Voice command to event dispatch singnal table
+        # See register_command method
+        self.command2signal = {}
  
         self.sleep = False
         self.exist_now = False
@@ -76,6 +74,17 @@ class Application(object):
 
         self.import_plugins()
 
+        core_commands = {
+            "wake up": ("wake up", self.wakeup)
+        }
+
+        for command in core_commands:
+            sig, func = core_commands[command]
+            self.register_command(command, sig)
+            dispatcher.connect(func, signal=sig, sender=dispatcher.Any)
+            print ("Registered '%s' command with '%s' singnal"
+                % (command, sig))
+
     @property
     def audio_out_device(self):
         out_device = str(config.get("audio")["out_device"])
@@ -95,7 +104,13 @@ class Application(object):
                     )
                 ):
                 module = libs.dynamic_import("plugins." + plugin)
-                module.register()
+                module.register(self)
+
+    def register_command(self, voice_commands, signal):
+        for command in voice_commands:
+            if command in self.command2signal:
+                raise Exception("Voice command already registered")
+            self.command2signal[command] = signal
 
     def run(self):
         self.loop()
@@ -143,8 +158,25 @@ class Application(object):
 
         return
 
+    def wakeup(self):
+        message = "Good morning"
+        print message
+        self.say(message)
+        self.sleep = False
+
     def execute_order(self, text):
+        for command in self.command2signal:
+            if not self.is_command(text, command):
+                continue
+            sig = self.command2signal[command]
+            param = self.get_param(text, command)
+            print "Dispatching signal: %s" % sig
+            dispatcher.send(signal=sig)
+            return
         message = "Did you say, %s?" % text
+        self.say(message)
+
+        return
 
         if text.lower() == "wake up":
             message = "Good morning"
@@ -241,12 +273,14 @@ class Application(object):
             return True
         return False
 
-    def is_command(self, text, commands):
+    def is_command(self, text, command):
         text = text.lower().strip(" ")
-        for command in commands:
-            if text[0:len(command)] == command and len(text) > len(command) + 4:
-                return command
+        if text[0:len(command)] == command and len(text) > len(command) + 4:
+            return True
         return False
+
+    def get_param(self, text, command):
+        return text.strip(" ")[len(command):].strip(" ")
 
     def clean_files(self):
         files = [

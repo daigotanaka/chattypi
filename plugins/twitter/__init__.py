@@ -25,7 +25,7 @@ import oauth2 as oauth
 import urllib
 
 
-def register():
+def register(app):
     from config import config
     global twitter
     twitter = Twitter(
