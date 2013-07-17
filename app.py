@@ -72,16 +72,24 @@ class Application(object):
         self.listener = Listener(user=self.user, sample_rate=self.sample_rate)
         self.speech2text = Speech2Text(user=self.user, sample_rate=self.sample_rate)
 
-        self.import_plugins()
-
         core_commands = {
             "wake up": ("wake up", self.wakeup),
-            "exit program": ("exit program", self.exit_program)
+            "exit program": ("exit program", self.exit_program),
+            "reboot": ("reboot", self.reboot),
+            "shut down": ("shut down", self.shutdown),
+            "shutdown": ("shut down", self.shutdown),
+            "switch audio": ("switch audio", self.switch_audio),
+            "what is local ip": ("local ip", self.local_ip),
+            "status report": ("status report", self.status_report),
+            "status update": ("status report", self.status_report),
+            "turn on": ("turn on", self.turn_on),
         }
 
         for command in core_commands:
             sig, func = core_commands[command]
             self.register_command([command], sig, func)
+
+        self.import_plugins()
 
     @property
     def audio_out_device(self):
@@ -166,12 +174,39 @@ class Application(object):
         self.say(message, nowait=True)
         self.clean_files()
         self.exit_now = True
- 
+
     def wakeup(self):
-        message = "Good morning"
-        print message
-        self.say(message)
+        self.say("Good morning")
         self.sleep = False
+
+    def reboot(self):
+        self.say("Rebooting...")
+        self.clean_files()
+        os.system("sudo reboot")
+ 
+    def shutdown(self):
+        self.say("Shutting down...")
+        self.clean_files()
+        os.system("sudo shutdown -h now")
+
+    def switch_audio(self):
+        self.say("Switched audio output hardware")
+        config.get("audio")["out_device"] = 0 if config.get("audio")["out_device"] == 1 else 1
+        config.write()
+
+    def local_ip(self):
+        self.say(self.get_ip())
+
+    def status_report(self):
+        self.say("Current noise level is %.1f" % self.vol_average
+            + ". Your voice is %.1f" % self.current_volume)
+
+    def turn_on(self, param):
+        message = "I did not understand."
+        if param.lower() == "vnc server":
+            self.system(os.path.join(self.usr_bin_path, "vncserver") + " :1")
+            message = "VNC server is on"
+        self.say(message)
 
     def execute_order(self, text):
         for command in self.command2signal:
@@ -192,36 +227,6 @@ class Application(object):
             message = "Good night"
             self.sleep = True
  
-        elif text.lower() == "reboot":
-            message = "Rebooting..."
-            self.clean_files()
-            os.system("sudo reboot")
-  
-        elif text.lower() in ["shutdown", "shut down"]:
-            message = "Shutting down..."
-            self.clean_files()
-            os.system("sudo shutdown -h now")
-
-        elif text.lower() == "switch audio":
-            message = "Switched audio output hardware"
-            config.get("audio")["out_device"] = 0 if config.get("audio")["out_device"] == 1 else 1
-            config.write()
-
-        elif self.is_command(text, ["turn on"]):
-            message = "I did not understand."
-            rest =  self.strip_command(text, "turn on")
-
-            if rest.lower() == "vnc server":
-                self.system(os.path.join(self.usr_bin_path, "vncserver") + " :1")
-                message = "VNC server is on"
-
-        elif text.lower() == "what is local ip":
-            message = self.get_ip()
-
-        elif text.lower() in ["status update", "status report"]:
-            message = ("Current noise level is %.1f" % self.vol_average
-                + ". Your voice is %.1f" % self.current_volume)
-
         elif text.lower() == "reset recording level":
             self.min_volume = self.vol_average * 1.5
             message = "Set minimum voice level to %.1f" % self.min_volume
@@ -234,11 +239,6 @@ class Application(object):
             config.get("audio")["min_volume"] = self.min_volume
             config.write()
  
-        elif self.is_command(text, ["tweet"]):
-            status = self.strip_command(text, "tweet")
-            self.tweet(status)
-            return
-
         elif text.lower() == "add contact":
             self.add_contact()
             return
@@ -260,9 +260,6 @@ class Application(object):
                 self.search(command, text)
                 return
  
-        print message 
-        self.say(message)
-
     def strip_command(self, text, command):
         return text[len(command):].strip(" ")
 

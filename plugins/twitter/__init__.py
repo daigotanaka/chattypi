@@ -24,16 +24,35 @@ import os
 import oauth2 as oauth
 import urllib
 
+from plugins import Plugin
+
 
 def register(app):
-    from config import config
-    global twitter
-    twitter = Twitter(
-        consumer_key=config.get("twitter")["consumer_key"],
-        consumer_secret=config.get("twitter")["consumer_secret"],
-        access_key=config.get("twitter")["access_key"],
-        access_secret=config.get("twitter")["access_secret"]
-    )
+    global twitter_plugin
+    twitter_plugin = TwitterPlugin(app)
+    app.register_command(["tweet"], "tweet", twitter_plugin.tweet)
+
+class TwitterPlugin(Plugin):
+    def __init__(self, app):
+        from config import config
+        self.twitter = Twitter(
+            consumer_key=config.get("twitter")["consumer_key"],
+            consumer_secret=config.get("twitter")["consumer_secret"],
+            access_key=config.get("twitter")["access_key"],
+            access_secret=config.get("twitter")["access_secret"]
+        )
+        super(TwitterPlugin, self).__init__(app)
+
+    def tweet(self, param):
+        if not param:
+            self.app.say("I don't know what you want me to tweet")
+
+        status = param
+        if not self.app.confirm("The status, " + status + " will be tweeted. Is that OK?"):
+            self.app.say("Cancelled")
+            return
+        self.app.say("Tweeted")
+        self.twitter.tweet(status)
 
 
 class Twitter(object):
