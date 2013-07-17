@@ -20,14 +20,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import wolframalpha
+import re
 import sys
+
+import wolframalpha
+
+from plugins import Plugin
 
 
 def register(app):
-    from config import config
-    global wra
-    wra = WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
+    global wra_plugin
+    wra_plugin = WolfRamAlphaPlugin(app)
+    app.register_command(["search", "what is", "who is", "where is"], "search", wra_plugin.search)
+
+
+class WolfRamAlphaPlugin(Plugin):
+    def __init__(self, app):
+        from config import config
+        self.wolframalpha = WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
+        super(WolfRamAlphaPlugin, self).__init__(app)
+
+    def search(self, param):
+        query = param
+        self.app.say("Searching: " + query, nowait=True)
+        answer = self.wolframalpha.search(query)
+        print "Answer: %s" % answer
+
+        for sentences in re.split(r" *[\?\(!|\n][\'\"\)\]]* *", answer):
+            for sentence in sentences.split(". "):
+                self.app.say(sentence)
 
 
 class WolfRamAlphaSearch(object):

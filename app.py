@@ -244,23 +244,6 @@ class Application(object):
         elif text.lower() == "add contact":
             self.add_contact()
             return
-
-        elif self.is_command(text, ["send text to"]):
-            nickname = self.strip_command(text, "send text to")
-            self.send_message("sms", nickname)
-            return
-
-        elif self.is_command(text, ["send email to"]):
-            nickname = self.strip_command(text, "send email to")
-            self.send_message("email", nickname)
-            return
-
-        else:
-            commands = ["search", "what is", "what's", "who is", "where is"]
-            command = self.is_command(text, commands)
-            if command:
-                self.search(command, text)
-                return
  
     def strip_command(self, text, command):
         return text[len(command):].strip(" ")
@@ -401,25 +384,6 @@ class Application(object):
     def system(self, cmd):
         return libs.system(user=self.user, command=cmd)
 
-
-    def search(self, command, text):
-        message = "You asked, %s" % text
-        self.say(message, nowait=True)
-        print message
-        query = self.strip_command(text, command)
-        answer = self.wolframalpha.search(query)
-        print "Answer: %s" % answer
-
-        for sentences in re.split(r" *[\?\(!|\n][\'\"\)\]]* *", answer):
-            for sentence in sentences.split(". "):
-                self.say(sentence)
-
-    def tweet(self, status):
-        if not self.confirm("The status, " + status + " will be tweeted. Is that OK?"):
-            self.say("Cancelled")
-        self.say("Tweeted," + status)
-        self.twitter.tweet(status)
-
     def add_contact(self):
         self.say("This feature is currently unsupported")
 
@@ -450,40 +414,6 @@ class Application(object):
         self.addressbook.add(nickname, number)
         self.say("The phone number " + " ".join(number) + " for " + nickname + " was added.")
         """
-
-    def send_message(self, via, nickname):
-        to_ = (self.addressbook.get_primary_phone(nickname.lower())
-            if via == "sms" else self.addressbook.get_primary_email(nickname.lower()))
-        if not to_:
-            self.say("Sorry, I cannot find the contact")
-            return
-        print to_
-        self.say("What message do you want me to send?")
-        body = self.listen_once(duration=7.0)
-        print body
-        if not body:
-            self.say("Sorry, I could not understand. Try again.")
-            body = self.listen_once(duration=7.0)
-            print body
-            if not body:
-                self.say("Sorry.")
-                return
-        to_verbal = " ".join(to_) if via == "sms" else to_
-        name = self.addressbook.get_fullname(nickname)
-        self.say("Your said, " + body)
-        if not self.confirm("The message will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
-            self.say("Cancelled")
-            return
-        try:
-            if via == "sms":
-                self.twilio.send_sms(to_=to_, from_=self.my_phone, body=body)
-            else:
-                to_email = name + "<" + to_ + ">" if name else to_
-                self.mailgun.send_email(to_=to_email, from_=self.my_email, body=body)
-        except Exception, err:
-            self.say("I got an error sending message")
-            return
-        self.say("The message was sent")
 
 if __name__ == "__main__":
     app = Application()
