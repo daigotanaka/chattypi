@@ -42,7 +42,7 @@ import wolframalpha_search
 """
 
 
-class StandBy(object):
+class Application(object):
 
     def __init__(self):
         self.usr_bin_path = config.get("system")["usr_bin"]
@@ -82,9 +82,6 @@ class StandBy(object):
         return ("pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
 
-    def system(self, cmd):
-        return libs.system(user=self.user, command=cmd)
-
     def import_plugins(self):
         path, file = os.path.split(os.path.realpath(__file__))
         path = os.path.join(path, "plugins")
@@ -100,7 +97,8 @@ class StandBy(object):
                 module = libs.dynamic_import("plugins." + plugin)
                 module.register()
 
-        print plugins
+    def run(self):
+        self.loop()
 
     def loop(self):
         self.exit_now = False
@@ -369,6 +367,10 @@ class StandBy(object):
             return True
         return False
 
+    def system(self, cmd):
+        return libs.system(user=self.user, command=cmd)
+
+
     def search(self, command, text):
         message = "You asked, %s" % text
         self.say(message, nowait=True)
@@ -453,5 +455,5 @@ class StandBy(object):
         self.say("The message was sent")
 
 if __name__ == "__main__":
-    sb = StandBy()
-    sb.loop()
+    app = Application()
+    app.run()
