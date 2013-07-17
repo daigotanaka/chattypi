@@ -20,23 +20,44 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from twilio.rest import TwilioRestClient
+import requests
 
-class Twilio(object):
 
-    def __init__(self, account_sid, auth_token):
-        self.account_sid = account_sid
-        self.account_token = auth_token
-        self.client = TwilioRestClient(account_sid, auth_token)
+def register():
+    from config import config
+    global mailgun
+    mailgun = Mailgun(
+        api_key=config.get("mailgun")["api_key"],
+        mailgun_domain=config.get("mailgun")["mailgun_domain"])
 
-    def send_sms(self, to_, from_, body):
-        self.client.sms.messages.create(to=to_, from_=from_, body=body)
+
+class Mailgun(object):
+
+    def __init__(self, api_key, mailgun_domain, mailgun_url="https://api.mailgun.net/v2"):
+        self.api_key = api_key
+        self.mailgun_domain = mailgun_domain
+        self.mailgun_url = mailgun_url
+
+    def send_email(self, to_, from_, body):
+        params = {
+            "to": to_,
+            "from": from_,
+            "subject": body,
+            "text": body
+        }
+        response = requests.post(
+            self.mailgun_url + "/" + self.mailgun_domain + "/" + "messages",
+            auth=("api", self.api_key), params=params)
+        return response
 
 if __name__ == "__main__":
     from config import config
-    twilio = Twilio(account_sid=config.get("twilio")["account_sid"],
-        auth_token=config.get("twilio")["auth_token"])
+    mailgun = Mailgun(
+        api_key=config.get("mailgun")["api_key"],
+        mailgun_domain=config.get("mailgun")["mailgun_domain"],
+        mailgun_url=config.get("mailgun")["mailgun_url"])
     try:
-        twilio.send_sms(to_="0000000000", from_="1111111111", message="test")
+        response = mailgun.send_email(to_="x@xxx.com", from_="y@yyy.com", message="Don't forget to check your spam folder if you did not receive email")
     except Exception, err:
         print err
+    print response.text

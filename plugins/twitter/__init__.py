@@ -25,6 +25,17 @@ import oauth2 as oauth
 import urllib
 
 
+def register():
+    from config import config
+    global twitter
+    twitter = Twitter(
+        consumer_key=config.get("twitter")["consumer_key"],
+        consumer_secret=config.get("twitter")["consumer_secret"],
+        access_key=config.get("twitter")["access_key"],
+        access_secret=config.get("twitter")["access_secret"]
+    )
+
+
 class Twitter(object):
 
     def __init__(self, consumer_key, consumer_secret, access_key, access_secret):

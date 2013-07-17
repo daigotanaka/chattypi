@@ -27,17 +27,22 @@ import socket
 import subprocess
 import urllib
 
+
 from addressbook import AddressBook
-from email_utils import Mailgun
-from libs import Os
+import libs
 from listener import Listener
-from phone import Twilio
+import plugins
 from speech2text import Speech2Text
+
+"""
+from email_utils import Mailgun
+from phone import Twilio
 from twitter import Twitter
 import wolframalpha_search
+"""
 
 
-class StandBy(Os):
+class StandBy(object):
 
     def __init__(self):
         self.usr_bin_path = config.get("system")["usr_bin"]
@@ -46,7 +51,7 @@ class StandBy(Os):
         self.sleep = False
         self.exist_now = False
         self.nickname = config.get("nickname")
-        self.username = config.get("username")
+        self.user = config.get("user")
         self.threshold = config.get("audio")["threshold"]
         self.min_volume = config.get("audio")["min_volume"]
         self.sample_rate = config.get("audio")["sample_rate"]
@@ -65,31 +70,37 @@ class StandBy(Os):
 
         self.clean_files()
 
-        self.addressbook = AddressBook(user=self.username, file=config.get("addressbook")["file"])
-        self.listener = Listener(user=self.username, sample_rate=self.sample_rate)
-        self.speech2text = Speech2Text(user=self.username, sample_rate=self.sample_rate) 
-        self.twitter = Twitter(
-            consumer_key=config.get("twitter")["consumer_key"],
-            consumer_secret=config.get("twitter")["consumer_secret"],
-            access_key=config.get("twitter")["access_key"],
-            access_secret=config.get("twitter")["access_secret"]
-        )
-        self.twilio = Twilio(
-            account_sid=config.get("twilio")["account_sid"],
-            auth_token=config.get("twilio")["auth_token"]
-        )
-        self.mailgun = Mailgun(
-            api_key=config.get("mailgun")["api_key"],
-            mailgun_domain=config.get("mailgun")["mailgun_domain"])
-        self.wolframalpha = wolframalpha_search.WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
+        self.addressbook = AddressBook(user=self.user, file=config.get("addressbook")["file"])
+        self.listener = Listener(user=self.user, sample_rate=self.sample_rate)
+        self.speech2text = Speech2Text(user=self.user, sample_rate=self.sample_rate)
 
-        super(StandBy, self).__init__(self.username)
+        self.import_plugins()
 
     @property
     def audio_out_device(self):
         out_device = str(config.get("audio")["out_device"])
         return ("pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
+
+    def system(self, cmd):
+        return libs.system(user=self.user, command=cmd)
+
+    def import_plugins(self):
+        path, file = os.path.split(os.path.realpath(__file__))
+        path = os.path.join(path, "plugins")
+        for plugin in os.listdir(path):
+            if plugin == "__init__.py":
+                continue
+            if (plugin != "__init__.py"
+                and os.path.isdir(os.path.join(path, plugin))
+                and os.path.exists(
+                    os.path.join(path, plugin, "__init__.py")
+                    )
+                ):
+                module = libs.dynamic_import("plugins." + plugin)
+                module.register()
+
+        print plugins
 
     def loop(self):
         self.exit_now = False

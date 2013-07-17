@@ -20,36 +20,39 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import requests
+import wolframalpha
+import sys
 
 
-class Mailgun(object):
+def register():
+    from config import config
+    global wra
+    wra = WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
 
-    def __init__(self, api_key, mailgun_domain, mailgun_url="https://api.mailgun.net/v2"):
-        self.api_key = api_key
-        self.mailgun_domain = mailgun_domain
-        self.mailgun_url = mailgun_url
 
-    def send_email(self, to_, from_, body):
-        params = {
-            "to": to_,
-            "from": from_,
-            "subject": body,
-            "text": body
-        }
-        response = requests.post(
-            self.mailgun_url + "/" + self.mailgun_domain + "/" + "messages",
-            auth=("api", self.api_key), params=params)
-        return response
+class WolfRamAlphaSearch(object):
+    def __init__(self, app_id):
+        self.client = wolframalpha.Client(app_id)
+
+    def search(self, query):
+        response = self.client.query(query)
+        
+        if len(response.pods) > 0:
+            texts = ""
+            pod = response.pods[1]
+            if pod.text:
+                texts = pod.text
+            else:
+                texts = "I have no answer for that"
+            # to skip ascii character in case of error
+            texts = texts.encode('ascii', 'ignore')
+        else:
+            texts = "Sorry, I am not sure."
+
+        return texts
 
 if __name__ == "__main__":
     from config import config
-    mailgun = Mailgun(
-        api_key=config.get("mailgun")["api_key"],
-        mailgun_domain=config.get("mailgun")["mailgun_domain"],
-        mailgun_url=config.get("mailgun")["mailgun_url"])
-    try:
-        response = mailgun.send_email(to_="x@xxx.com", from_="y@yyy.com", message="Don't forget to check your spam folder if you did not receive email")
-    except Exception, err:
-        print err
-    print response.text
+    app_id = config.get("wolframalpha")["app_id"]
+    wa = WolfRamAlphaSearch(app_id=app_id)
+    print wa.search("Population of United States")

@@ -22,13 +22,17 @@
 
 import os
 
-from libs import Os
+import libs
 
-class Speech2Text(Os):
+class Speech2Text(object):
 
     def __init__(self, user="", sample_rate=16000):
         self.sample_rate = sample_rate
-        super(Speech2Text, self).__init__(user)
+        self.user = user
+
+    def system(self, cmd):
+        return libs.system(command=cmd, user=self.user)
+
 
     def convertToFlac(self, infile="/tmp/noise.wav", outfile="/tmp/noise.flac"):
         cmd = "/usr/bin/avconv "

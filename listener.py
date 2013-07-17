@@ -22,13 +22,16 @@
 
 import os
 
-from libs import Os
+import libs
 
-class Listener(Os):
+class Listener(object):
 
     def __init__(self, user="", sample_rate=16000):
         self.sample_rate = sample_rate
-        super(Listener, self).__init__(user)
+        self.user = user
+
+    def system(self, cmd):
+        return libs.system(command=cmd, user=self.user)
 
     def record_flac(self, file="/tmp/noise.flac", hw="plughw:1,0", duration=5, nullout=False):
         if os.path.exists(file):

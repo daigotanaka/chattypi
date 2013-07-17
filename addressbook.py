@@ -25,12 +25,13 @@ import csv
 import os
 import re
 
-from libs import Os
+import libs
 
 
-class AddressBook(Os):
+class AddressBook(object):
 
     def __init__(self, user, file):
+        self.user = user
         self.nickname_field = "Nickname"
         self.fullname_field = "Name"
         self.primary_phone_field = "Phone 1 - Value"
@@ -58,7 +59,9 @@ class AddressBook(Os):
                 err = True
                 continue
             err = False
-        super(AddressBook, self).__init__(user)
+
+    def system(self, cmd):
+        return libs.system(command=cmd, user=self.user)
 
     def get_field_index(self, field_name):
         return self.fields.index(field_name)

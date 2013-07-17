@@ -20,33 +20,33 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import wolframalpha
-import sys
+from twilio.rest import TwilioRestClient
 
 
-class WolfRamAlphaSearch(object):
-    def __init__(self, app_id):
-        self.client = wolframalpha.Client(app_id)
+def register():
+    from config import config
+    global twilio
+    twilio = Twilio(
+        account_sid=config.get("twilio")["account_sid"],
+        auth_token=config.get("twilio")["auth_token"]
+    )
 
-    def search(self, query):
-        response = self.client.query(query)
-        
-        if len(response.pods) > 0:
-            texts = ""
-            pod = response.pods[1]
-            if pod.text:
-                texts = pod.text
-            else:
-                texts = "I have no answer for that"
-            # to skip ascii character in case of error
-            texts = texts.encode('ascii', 'ignore')
-        else:
-            texts = "Sorry, I am not sure."
 
-        return texts
+class Twilio(object):
+
+    def __init__(self, account_sid, auth_token):
+        self.account_sid = account_sid
+        self.account_token = auth_token
+        self.client = TwilioRestClient(account_sid, auth_token)
+
+    def send_sms(self, to_, from_, body):
+        self.client.sms.messages.create(to=to_, from_=from_, body=body)
 
 if __name__ == "__main__":
     from config import config
-    app_id = config.get("wolframalpha")["app_id"]
-    wa = WolfRamAlphaSearch(app_id=app_id)
-    print wa.search("Population of United States")
+    twilio = Twilio(account_sid=config.get("twilio")["account_sid"],
+        auth_token=config.get("twilio")["auth_token"])
+    try:
+        twilio.send_sms(to_="0000000000", from_="1111111111", message="test")
+    except Exception, err:
+        print err
