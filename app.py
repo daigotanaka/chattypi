@@ -75,15 +75,13 @@ class Application(object):
         self.import_plugins()
 
         core_commands = {
-            "wake up": ("wake up", self.wakeup)
+            "wake up": ("wake up", self.wakeup),
+            "exit program": ("exit program", self.exit_program)
         }
 
         for command in core_commands:
             sig, func = core_commands[command]
-            self.register_command(command, sig)
-            dispatcher.connect(func, signal=sig, sender=dispatcher.Any)
-            print ("Registered '%s' command with '%s' singnal"
-                % (command, sig))
+            self.register_command([command], sig, func)
 
     @property
     def audio_out_device(self):
@@ -106,11 +104,16 @@ class Application(object):
                 module = libs.dynamic_import("plugins." + plugin)
                 module.register(self)
 
-    def register_command(self, voice_commands, signal):
+    def register_command(self, voice_commands, signal, func):
         for command in voice_commands:
             if command in self.command2signal:
-                raise Exception("Voice command already registered")
+                raise Exception("Voice command %s already registered"
+                    % command)
             self.command2signal[command] = signal
+            dispatcher.connect(func, signal=signal, sender=dispatcher.Any)
+            print ("Registered '%s' command with '%s' singnal"
+                % (command, signal))
+
 
     def run(self):
         self.loop()
@@ -158,6 +161,12 @@ class Application(object):
 
         return
 
+    def exit_program(self):
+        message = "Voice command off"
+        self.say(message, nowait=True)
+        self.clean_files()
+        self.exit_now = True
+ 
     def wakeup(self):
         message = "Good morning"
         print message
@@ -171,29 +180,18 @@ class Application(object):
             sig = self.command2signal[command]
             param = self.get_param(text, command)
             print "Dispatching signal: %s" % sig
-            dispatcher.send(signal=sig)
+            kwargs = {"param": param}
+            dispatcher.send(signal=sig, **kwargs)
             return
         message = "Did you say, %s?" % text
         self.say(message)
 
         return
 
-        if text.lower() == "wake up":
-            message = "Good morning"
-            self.sleep = False
-
-        elif self.sleep:
-            return
-
-        elif text.lower() in ["go to sleep", "sleep"]:
+        if text.lower() in ["go to sleep", "sleep"]:
             message = "Good night"
             self.sleep = True
-
-        elif text.lower() == "exit":
-            message = "Voice command off"
-            self.clean_files()
-            self.exit_now = True
-  
+ 
         elif text.lower() == "reboot":
             message = "Rebooting..."
             self.clean_files()
@@ -275,7 +273,7 @@ class Application(object):
 
     def is_command(self, text, command):
         text = text.lower().strip(" ")
-        if text[0:len(command)] == command and len(text) > len(command) + 4:
+        if text[0:len(command)] == command:
             return True
         return False
 
@@ -308,6 +306,7 @@ class Application(object):
         os.system(cmd)
 
     def say(self, text, nowait=False):
+        print text
         param = urllib.urlencode({"tl": "en", "q": text})
         url = "http://translate.google.com/translate_tts?" + param
         if not nowait:
