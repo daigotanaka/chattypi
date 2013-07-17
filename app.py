@@ -113,6 +113,8 @@ class Application(object):
                 module.register(self)
 
     def register_command(self, voice_commands, signal, func):
+        if type(voice_commands) == str:
+            voice_commands = [voice_commands]
         for command in voice_commands:
             if command in self.command2signal:
                 raise Exception("Voice command %s already registered"
