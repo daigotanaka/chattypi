@@ -381,7 +381,6 @@ class Application(object):
         return s.getsockname()[0]
 
     def confirm(self, message):
-        print message
         self.say(message)
         text = self.listen_once(duration=3.0)
         print text

@@ -22,14 +22,54 @@
 
 from twilio.rest import TwilioRestClient
 
+from plugins import Plugin
+
 
 def register(app):
-    from config import config
-    global twilio
-    twilio = Twilio(
-        account_sid=config.get("twilio")["account_sid"],
-        auth_token=config.get("twilio")["auth_token"]
-    )
+    global twilio_plugin
+    twilio_plugin = TwilioPlugin(app)
+    app.register_command(["send text to"], "send text", twilio_plugin.send_sms)
+
+
+class TwilioPlugin(Plugin):
+    def __init__(self, app):
+        from config import config
+        self.twilio = Twilio(
+            account_sid=config.get("twilio")["account_sid"],
+            auth_token=config.get("twilio")["auth_token"]
+        )
+        super(TwilioPlugin, self).__init__(app)
+
+    def send_sms(self, param):
+        nickname = param
+        to_ = self.app.addressbook.get_primary_phone(nickname.lower())
+        if not to_:
+            self.app.say("Sorry, I cannot find the contact")
+            return
+        print to_
+        self.app.say("What message do you want me to send?")
+        body = self.app.listen_once(duration=7.0)
+        print body
+        if not body:
+            self.app.say("Sorry, I could not understand. Try again.")
+            body = self.app.listen_once(duration=7.0)
+            print body
+            if not body:
+                self.app.say("Sorry.")
+                return
+        to_verbal = " ".join(to_)
+        name = self.app.addressbook.get_fullname(nickname)
+        self.app.say("Your said, " + body)
+        if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
+            self.app.say("Cancelled")
+            return
+        try:
+            self.twilio.send_sms(to_=to_, from_=self.app.my_phone, body=body)
+        except Exception, err:
+            self.app.say("I got an error sending message")
+            print err
+            return
+        self.app.say("The message was sent")
 
 
 class Twilio(object):
