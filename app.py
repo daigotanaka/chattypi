@@ -45,7 +45,8 @@ class Application(object):
         # Voice command to event dispatch singnal table
         # See register_command method
         self.command2signal = {}
- 
+
+        self.greeted = False
         self.sleep = False
         self.exist_now = False
         self.nickname = config.get("nickname")
@@ -141,10 +142,12 @@ class Application(object):
                 self.play_sound("wav/down.wav")
                 exit()
 
-            self.say(self.nickname + ". At your service.")
+            if not self.greeted:
+                self.say(self.nickname + ". At your service.")
+                self.greeted = True
 
         vol = self.get_volume(duration=self.idle_duration)
-        print "vol=%.1f avg=%.1f" % (vol, self.vol_average)
+        print "vol=%.2f avg=%.2f" % (vol, self.vol_average)
         if not self.is_loud(vol):
             self.update_noise_level(vol)
             return
@@ -351,6 +354,8 @@ class Application(object):
         return None
 
     def update_noise_level(self, vol):
+        if vol < 0.01:
+            return
         self.vol_total += vol
         self.vol_samples += 1
         self.vol_average = self.vol_total / self.vol_samples
