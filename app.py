@@ -135,6 +135,14 @@ class Application(object):
            self.checkin()
 
     def checkin(self):
+        if self.vol_samples == 6:
+            if not self.get_ip():
+                # The internet is down
+                self.play_sound("wav/down.wav")
+                exit()
+
+            self.say(self.nickname + ". At your service.")
+
         vol = self.get_volume(duration=self.idle_duration)
         print "vol=%.1f avg=%.1f" % (vol, self.vol_average)
         if not self.is_loud(vol):
@@ -192,9 +200,9 @@ class Application(object):
         os.system("sudo shutdown -h now")
 
     def switch_audio(self):
-        self.say("Switched audio output hardware")
         config.get("audio")["out_device"] = 0 if config.get("audio")["out_device"] == 1 else 1
         config.write()
+        self.say("Switched audio output hardware")
 
     def local_ip(self):
         self.say(self.get_ip())
@@ -347,12 +355,7 @@ class Application(object):
         self.vol_samples += 1
         self.vol_average = self.vol_total / self.vol_samples
 
-        if self.vol_samples == 6:
-            if not self.get_ip():
-                self.play_sound("wav/down.wav")
-
-            self.say(self.nickname + ". At your service.")
-        elif self.vol_samples > 20:
+        if self.vol_samples > 20:
             self.vol_total = self.vol_average * 10
             self.vol_samples = 10
 
