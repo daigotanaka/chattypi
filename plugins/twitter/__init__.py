@@ -25,6 +25,7 @@ import oauth2 as oauth
 import urllib
 
 from plugins import Plugin
+from plugins.twitter.config import config
 
 
 def register(app):
@@ -34,12 +35,11 @@ def register(app):
 
 class TwitterPlugin(Plugin):
     def __init__(self, app):
-        from config import config
         self.twitter = Twitter(
-            consumer_key=config.get("twitter")["consumer_key"],
-            consumer_secret=config.get("twitter")["consumer_secret"],
-            access_key=config.get("twitter")["access_key"],
-            access_secret=config.get("twitter")["access_secret"]
+            consumer_key=config.get("consumer_key"),
+            consumer_secret=config.get("consumer_secret"),
+            access_key=config.get("access_key"),
+            access_secret=config.get("access_secret")
         )
         super(TwitterPlugin, self).__init__(app)
 
@@ -78,12 +78,11 @@ class Twitter(object):
 
 
 if __name__ == "__main__":
-    from config import config
     twitter = Twitter(
-        consumer_key=config.get("twitter")["consumer_key"],
-        consumer_secret=config.get("twitter")["consumer_secret"],
-        access_key=config.get("twitter")["access_key"],
-        access_secret=config.get("twitter")["access_secret"]
+        consumer_key=config.get("consumer_key"),
+        consumer_secret=config.get("consumer_secret"),
+        access_key=config.get("access_key"),
+        access_secret=config.get("access_secret")
     )
 
     twitter.tweet("test tweet")

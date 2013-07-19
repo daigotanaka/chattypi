@@ -22,6 +22,7 @@
 
 from twilio.rest import TwilioRestClient
 
+from plugins.twilio.config import config
 from plugins import Plugin
 
 
@@ -33,11 +34,11 @@ def register(app):
 
 class TwilioPlugin(Plugin):
     def __init__(self, app):
-        from config import config
         self.twilio = Twilio(
-            account_sid=config.get("twilio")["account_sid"],
-            auth_token=config.get("twilio")["auth_token"]
+            account_sid=config.get("account_sid"),
+            auth_token=config.get("auth_token")
         )
+        self.my_phone = config.get("my_phone")
         super(TwilioPlugin, self).__init__(app)
 
     def send_sms(self, param):
@@ -64,7 +65,7 @@ class TwilioPlugin(Plugin):
             self.app.say("Cancelled")
             return
         try:
-            self.twilio.send_sms(to_=to_, from_=self.app.my_phone, body=body)
+            self.twilio.send_sms(to_=to_, from_=self.my_phone, body=body)
         except Exception, err:
             self.app.say("I got an error sending message")
             print err
@@ -83,9 +84,8 @@ class Twilio(object):
         self.client.sms.messages.create(to=to_, from_=from_, body=body)
 
 if __name__ == "__main__":
-    from config import config
-    twilio = Twilio(account_sid=config.get("twilio")["account_sid"],
-        auth_token=config.get("twilio")["auth_token"])
+    twilio = Twilio(account_sid=config.get("account_sid"),
+        auth_token=config.get("auth_token"))
     try:
         twilio.send_sms(to_="0000000000", from_="1111111111", message="test")
     except Exception, err:

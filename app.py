@@ -46,6 +46,8 @@ class Application(object):
         # See register_command method
         self.command2signal = {}
 
+        self.config = config
+
         self.greeted = False
         self.sleep = False
         self.exist_now = False
@@ -56,7 +58,6 @@ class Application(object):
         self.sample_rate = config.get("audio")["sample_rate"]
         self.idle_duration = config.get("audio")["idle_duration"]
         self.take_order_duration = config.get("audio")["take_order_duration"]
-        self.my_phone = config.get("twilio")["from_phone"]
         self.my_email = config.get("email")
         self.flac_file = "/tmp/noise.flac"
         self.vol_samples = 5

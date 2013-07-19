@@ -26,29 +26,9 @@ from validate import Validator
 
 
 CONFIGSPEC = """
-DEBUG = boolean(default=True)
-
-nickname = string(max=32, default="computer")
-username = string(max=32, default="pi")
-email = string(max=256)
-
-[system]
-usr_bin = string(max=1024, default="/usr/bin")
-default_path = string(max=1024, default="/home/pi/chattypi")
-greeting = string(max=256, default="ready")
-
-[addressbook]
-file = string(max=1024, default="/home/pi/chattypi/addressbook.csv")
-
-[audio]
-has_pulse = boolean(default=False)
-out_device = integer(0, 1, default=0)
-in_device = string(max=256, default="plughw:1,0")
-sample_rate = integer(16000, 48000, default=8000)
-threshold = float(0.0, 20.0, default=0)
-min_volume = float(0.0, 10.0, default=0)
-idle_duration = float(1.0, 5.0, default=2.0)
-take_order_duration = float(2.0, 10.0, default=6.0)
+my_phone = string(max=10)
+account_sid = string(max=256)
+auth_token = string(max=256)
 """
 
 configspec = CONFIGSPEC.split("\n")

@@ -26,6 +26,7 @@ import sys
 import wolframalpha
 
 from plugins import Plugin
+from plugins.wolframalpha.config import config
 
 
 def register(app):
@@ -36,8 +37,7 @@ def register(app):
 
 class WolfRamAlphaPlugin(Plugin):
     def __init__(self, app):
-        from config import config
-        self.wolframalpha = WolfRamAlphaSearch(app_id=config.get("wolframalpha")["app_id"])
+        self.wolframalpha = WolfRamAlphaSearch(app_id=config.get("app_id"))
         super(WolfRamAlphaPlugin, self).__init__(app)
 
     def search(self, param):
@@ -73,7 +73,6 @@ class WolfRamAlphaSearch(object):
         return texts
 
 if __name__ == "__main__":
-    from config import config
-    app_id = config.get("wolframalpha")["app_id"]
+    app_id = config.get("app_id")
     wa = WolfRamAlphaSearch(app_id=app_id)
     print wa.search("Population of United States")

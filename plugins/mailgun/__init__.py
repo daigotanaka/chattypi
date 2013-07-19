@@ -23,6 +23,7 @@
 import requests
 
 from plugins import Plugin
+from plugins.mailgun.config import config
 
 
 def register(app):
@@ -32,10 +33,9 @@ def register(app):
 
 class MailgunPlugin(Plugin):
     def __init__(self, app):
-        from config import config
         self.mailgun = Mailgun(
-            api_key=config.get("mailgun")["api_key"],
-            mailgun_domain=config.get("mailgun")["mailgun_domain"])
+            api_key=config.get("api_key"),
+            mailgun_domain=config.get("mailgun_domain"))
         super(MailgunPlugin, self).__init__(app)
 
     def send(self, param):
@@ -89,11 +89,10 @@ class Mailgun(object):
         return response
 
 if __name__ == "__main__":
-    from config import config
     mailgun = Mailgun(
-        api_key=config.get("mailgun")["api_key"],
-        mailgun_domain=config.get("mailgun")["mailgun_domain"],
-        mailgun_url=config.get("mailgun")["mailgun_url"])
+        api_key=config.get("api_key"),
+        mailgun_domain=config.get("mailgun_domain"),
+        mailgun_url=config.get("mailgun_url"))
     try:
         response = mailgun.send_email(to_="x@xxx.com", from_="y@yyy.com", message="Don't forget to check your spam folder if you did not receive email")
     except Exception, err:
