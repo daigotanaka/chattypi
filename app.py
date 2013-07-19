@@ -143,7 +143,7 @@ class Application(object):
                 exit()
 
             if not self.greeted:
-                self.say(self.nickname + ". At your service.")
+                self.say(self.nickname + " " + config.get("system")["greeting"])
                 self.greeted = True
 
         vol = self.get_volume(duration=self.idle_duration)
