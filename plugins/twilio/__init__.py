@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import datetime
 from twilio.rest import TwilioRestClient
 
 from plugins.twilio.config import config
@@ -30,7 +31,7 @@ def register(app):
     global twilio_plugin
     twilio_plugin = TwilioPlugin(app)
     app.register_command(["send text to"], "send text", twilio_plugin.send_sms)
-
+    app.register_command(["read texts", "read text"], "read sms", twilio_plugin.read_out_sms)
 
 class TwilioPlugin(Plugin):
     def __init__(self, app):
@@ -72,6 +73,20 @@ class TwilioPlugin(Plugin):
             return
         self.app.say("The message was sent")
 
+    def read_out_sms(self):
+        messages = self.twilio.fetch_received()
+        count = 0
+        for message in messages:
+            if message.status != "received":
+                continue
+            count += 1
+            self.app.say("Message %d" % count)
+            self.app.say(message.body)
+        if count == 0:
+            self.app.say("No messages today")
+        else:
+            self.app.say("End of messages")
+
 
 class Twilio(object):
 
@@ -82,6 +97,10 @@ class Twilio(object):
 
     def send_sms(self, to_, from_, body):
         self.client.sms.messages.create(to=to_, from_=from_, body=body)
+
+    def fetch_received(self):
+        return self.client.sms.messages.list(date_sent=datetime.datetime.today(), status="received")
+
 
 if __name__ == "__main__":
     twilio = Twilio(account_sid=config.get("account_sid"),
