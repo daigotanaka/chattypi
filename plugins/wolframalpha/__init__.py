@@ -30,6 +30,8 @@ from plugins.wolframalpha.config import config
 
 
 def register(app):
+    if not config.get("active"):
+        return
     global wra_plugin
     wra_plugin = WolfRamAlphaPlugin(app)
     app.register_command(["search", "what is", "who is", "where is"], "search", wra_plugin.search)

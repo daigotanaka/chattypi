@@ -28,6 +28,8 @@ from plugins import Plugin
 
 
 def register(app):
+    if not config.get("active"):
+        return
     global twilio_plugin
     twilio_plugin = TwilioPlugin(app)
     app.register_command(["send text to"], "send text", twilio_plugin.send_sms)

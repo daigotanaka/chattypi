@@ -27,6 +27,8 @@ from plugins.mailgun.config import config
 
 
 def register(app):
+    if not config.get("active"):
+        return
     global mailgun_plugin
     mailgun_plugin = MailgunPlugin(app)
     app.register_command("send email to", "send email", mailgun_plugin.send) 

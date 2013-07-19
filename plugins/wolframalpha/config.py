@@ -26,6 +26,7 @@ from validate import Validator
 
 
 CONFIGSPEC = """
+active = boolean(default=True)
 api_id = string(max=256)
 """
 

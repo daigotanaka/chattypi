@@ -29,6 +29,8 @@ from plugins.twitter.config import config
 
 
 def register(app):
+    if not config.get("active"):
+        return
     global twitter_plugin
     twitter_plugin = TwitterPlugin(app)
     app.register_command(["tweet"], "tweet", twitter_plugin.tweet)

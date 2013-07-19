@@ -26,6 +26,7 @@ from validate import Validator
 
 
 CONFIGSPEC = """
+active = boolean(default=True)
 my_phone = string(max=10)
 account_sid = string(max=256)
 auth_token = string(max=256)

@@ -26,6 +26,7 @@ from validate import Validator
 
 
 CONFIGSPEC = """
+active = boolean(default=True)
 consumer_key = string(max=256)
 consumer_secret = string(max=256)
 access_key = string(max=256)
