@@ -34,7 +34,7 @@ def register(app):
         return
     global wra_plugin
     wra_plugin = WolfRamAlphaPlugin(app)
-    app.register_command(["search", "what is", "who is", "where is"], "search", wra_plugin.search)
+    app.register_command(["search", "what is", "what's", "who is", "where is"], "search", wra_plugin.search)
 
 
 class WolfRamAlphaPlugin(Plugin):

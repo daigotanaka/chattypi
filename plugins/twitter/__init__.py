@@ -50,7 +50,8 @@ class TwitterPlugin(Plugin):
             self.app.say("I don't know what you want me to tweet")
 
         status = param
-        if not self.app.confirm("The status, " + status + " will be tweeted. Is that OK?"):
+        self.app.say("The status, " + status + " will be tweeted.")
+        if not self.app.confirm("Is that OK?"):
             self.app.say("Cancelled")
             return
         self.app.say("Tweeted")

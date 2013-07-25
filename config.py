@@ -38,7 +38,7 @@ default_path = string(max=1024, default="/home/pi/chattypi")
 greeting = string(max=256, default="ready")
 
 [addressbook]
-file = string(max=1024, default="/home/pi/chattypi/addressbook.csv")
+file = string(max=1024, default="/home/pi/chattypi/data/addressbook.csv")
 
 [audio]
 has_pulse = boolean(default=False)
