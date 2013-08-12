@@ -40,6 +40,10 @@ class MailgunPlugin(Plugin):
             mailgun_domain=config.get("mailgun_domain"))
         super(MailgunPlugin, self).__init__(app)
 
+        ip = self.app.get_ip()
+        if ip and config.get("send_ip_on_start"):
+            self.mailgun.send_email(to_=self.app.my_email, from_=self.app.my_email, subject="IP address", body="My IP address is %s" % ip)
+
     def send(self, param):
         nickname = param
         to_ = self.app.addressbook.get_primary_email(nickname.lower())

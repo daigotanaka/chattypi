@@ -30,6 +30,7 @@ active = boolean(default=True)
 api_key = string(max=256)
 mailgun_url = string(max=256, default="https://api.mailgun.net/v2")
 mailgun_domain = string(max=256)
+send_ip_on_start = boolean(default=False)
 """
 
 configspec = CONFIGSPEC.split("\n")
