@@ -26,6 +26,7 @@ from pydispatch import dispatcher
 import re
 import socket
 import subprocess
+from time import sleep
 import urllib
 
 
@@ -65,6 +66,7 @@ class Application(object):
         self.vol_average = 1.0
         self.sound_proc = None
         self.is_mic_down = False
+        self.inet_check_attempts = 0
 
         self.audio_in_device = str(config.get("audio")["in_device"])
 
@@ -141,7 +143,20 @@ class Application(object):
             if not self.get_ip():
                 # The internet is down
                 self.play_sound("wav/down.wav")
+
+                # Make the computer greet again when the internet is back
+                self.greeted = False
+
+                self.inet_check_attempts += 1
+                if self.inet_check_attempts <= config.get("system")["inet_check_max_attempts"]:
+                    sleep(10)
+                    return
+
+                self.play_sound("wav/bloop_x.wav")
                 exit()
+
+            # We have the internet
+            self.inet_check_attempts = 0
 
             if not self.greeted:
                 self.say(self.nickname + " " + config.get("system")["greeting"])

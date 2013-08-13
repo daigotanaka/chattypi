@@ -36,6 +36,7 @@ email = string(max=256)
 usr_bin = string(max=1024, default="/usr/bin")
 default_path = string(max=1024, default="/home/pi/chattypi")
 greeting = string(max=256, default="ready")
+inet_check_max_attempts = integer(1, 10, default=3)
 
 [addressbook]
 file = string(max=1024, default="/home/pi/chattypi/data/addressbook.csv")
