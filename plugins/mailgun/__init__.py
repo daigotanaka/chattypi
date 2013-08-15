@@ -30,7 +30,7 @@ def register(app):
         return
     global mailgun_plugin
     mailgun_plugin = MailgunPlugin(app)
-    app.register_command("send email to", "send email", mailgun_plugin.send) 
+    app.register_command(["send an email to", "send email to"], "send email", mailgun_plugin.send)
 
 
 class MailgunPlugin(Plugin):

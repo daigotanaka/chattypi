@@ -32,7 +32,7 @@ def register(app):
         return
     global twilio_plugin
     twilio_plugin = TwilioPlugin(app)
-    app.register_command(["send an sms to", "send sms to", "send a text message to", "send a text to"], "send text", twilio_plugin.send_sms)
+    app.register_command(["send an sms to", "send sms to", "send a text message to", "send text message to", "send a text to", "send text to"], "send text", twilio_plugin.send_sms)
     app.register_command(["read sms", "read text messages", "read text message", "read texts", "read text"], "read sms", twilio_plugin.read_out_sms)
 
 class TwilioPlugin(Plugin):
