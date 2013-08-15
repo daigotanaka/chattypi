@@ -46,7 +46,7 @@ class WolfRamAlphaPlugin(Plugin):
         query = param
         self.app.say("Searching: " + query, nowait=True)
         answer = self.wolframalpha.search(query)
-        print "Answer: %s" % answer
+        self.app.logger.debug("Answer: %s" % answer)
 
         for sentences in re.split(r" *[\?\(!|\n][\'\"\)\]]* *", answer):
             for sentence in sentences.split(". "):

@@ -33,6 +33,7 @@ username = string(max=32, default="pi")
 email = string(max=256)
 
 [system]
+logfile = string(max=1024, default="/home/pi/chattypi/chattypi.log")
 usr_bin = string(max=1024, default="/usr/bin")
 default_path = string(max=1024, default="/home/pi/chattypi")
 greeting = string(max=256, default="ready")

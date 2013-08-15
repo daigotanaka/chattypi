@@ -50,14 +50,14 @@ class TwilioPlugin(Plugin):
         if not to_:
             self.app.say("Sorry, I cannot find the contact")
             return
-        print to_
+        self.app.logger.debug(to_)
         self.app.say("What message do you want me to send?")
         body = self.app.listen_once(duration=7.0)
-        print body
+        self.app.logger.debug(body)
         if not body:
             self.app.say("Sorry, I could not understand. Try again.")
             body = self.app.listen_once(duration=7.0)
-            print body
+            self.app.logger(body)
             if not body:
                 self.app.say("Sorry.")
                 return
@@ -71,7 +71,7 @@ class TwilioPlugin(Plugin):
             self.twilio.send_sms(to_=to_, from_=self.my_phone, body=body)
         except Exception, err:
             self.app.say("I got an error sending message")
-            print err
+            self.app.logger.error(err)
             return
         self.app.say("The message was sent")
 

@@ -21,6 +21,7 @@
 # THE SOFTWARE.
 
 from config import config
+import logging
 import os
 from pydispatch import dispatcher
 import re
@@ -40,6 +41,15 @@ from speech2text import Speech2Text
 class Application(object):
 
     def __init__(self):
+	self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+	fh = logging.FileHandler(config.get("system")["logfile"])
+	fh.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+	ch.setLevel(logging.DEBUG)
+	self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
+
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]
 
@@ -125,7 +135,7 @@ class Application(object):
                     % command)
             self.command2signal[command] = signal
             dispatcher.connect(func, signal=signal, sender=dispatcher.Any)
-            print ("Registered '%s' command with '%s' singnal"
+            self.logger.info("Registered '%s' command with '%s' singnal"
                 % (command, signal))
 
 
@@ -163,38 +173,39 @@ class Application(object):
                 self.greeted = True
 
         vol = self.get_volume(duration=self.idle_duration)
-        print "vol=%.2f avg=%.2f" % (vol, self.vol_average)
+        self.logger.debug("vol=%.2f avg=%.2f" % (vol, self.vol_average))
         if not self.is_loud(vol):
             self.update_noise_level(vol)
             return
 
-        print "!"
+        self.logger.debug("!")
 
         text = self.get_text_from_last_heard()
 
         if not text:
-            print "I thought I heard something..."
+            self.logger.debug("I thought I heard something...")
             self.update_noise_level(vol)
             return
-        print "You said, %s" % text
+        self.logger.info("You said, %s" % text)
 
         if not self.is_cue(text):
             return
 
         if self.sleep:
-            print "Zzz..."
+            self.logger.debug("Zzz...")
 
         else:
-            print "yes?"
+            self.logger.info("yes?")
             self.play_sound("wav/yes_q.wav")
 
         text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
         if not text:
-            print "?"
+            self.logger.debug("?")
             return
 
-        print "Excecuting order..."
+        self.logger.debug("Excecuting order...")
         self.execute_order(text)
+
 
         return
 
@@ -243,7 +254,7 @@ class Application(object):
                 continue
             sig = self.command2signal[command]
             param = self.get_param(text, command)
-            print "Dispatching signal: %s" % sig
+            self.logger.info("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
             dispatcher.send(signal=sig, **kwargs)
             return
@@ -316,7 +327,7 @@ class Application(object):
         os.system(cmd)
 
     def say(self, text, nowait=False):
-        print text
+        self.logger.info(text)
         param = urllib.urlencode({"tl": "en", "q": text})
         url = "http://translate.google.com/translate_tts?" + param
         if not nowait:
@@ -360,7 +371,7 @@ class Application(object):
         if not self.is_loud(vol):
             return None
 
-        print "Heard at volume = %.2f" % vol
+        self.logger.debug("Heard at volume = %.2f" % vol)
         if acknowledge:
             self.play_sound("wav/click_x.wav", nowait=True)
         text = self.get_text_from_last_heard()
@@ -393,15 +404,15 @@ class Application(object):
     def confirm(self, message):
         self.say(message)
         text = self.listen_once(duration=3.0)
-        print text
+        self.logger.debug(text)
         count = 0
         while (count < 2
             and (not text or (text.lower() != "yes" and text.lower() != "no"))):
             count += 1
-            print message
+            self.logger.debug(message)
             self.say("Sorry, I could not catch that." + message)
             text = self.listen_once(duration=3.0)
-            print text
+            self.logger.debug(text)
         if text and text.lower() == "yes":
             return True
         return False
@@ -415,24 +426,24 @@ class Application(object):
         """
         self.say("What is the contact's nick name?")
         nickname = self.listen_once(duration=7.0)
-        print nickname
+        self.logger.debug(nickname)
         if not nickname:
             self.say("Sorry, I could not understand. Try again.")
             nickname = self.listen_once(duration=7.0)
-            print nickname
+            self.logger.debug(nickname)
             if not nickname:
                 self.say("Sorry.")
                 return
         self.say("What is the number for " + nickname + "?")
         number = self.listen_once(duration=10.0)
         number = re.sub(r"\D", "", number)
-        print number
+        self.logger.debug(number)
         phone_validator = re.compile(r"^\d{10}$")
         if phone_validator.match(number) is None:
             self.say("Sorry, I could not understand. Try again.")
             number = self.listen_once(duration=10.0)
             number = re.sub(r"\D", "", number)
-            print number
+            self.logger.debug(number)
             if number is None or phone_validator.match(number) is None:
                 self.say("Sorry.")
                 return
