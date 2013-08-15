@@ -41,13 +41,13 @@ from speech2text import Speech2Text
 class Application(object):
 
     def __init__(self):
-	self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
-	fh = logging.FileHandler(config.get("system")["logfile"])
-	fh.setLevel(logging.INFO)
+        fh = logging.FileHandler(config.get("system")["logfile"])
+        fh.setLevel(logging.INFO)
         ch = logging.StreamHandler()
-	ch.setLevel(logging.DEBUG)
-	self.logger.addHandler(fh)
+        ch.setLevel(logging.DEBUG)
+        self.logger.addHandler(fh)
         self.logger.addHandler(ch)
 
         self.usr_bin_path = config.get("system")["usr_bin"]
