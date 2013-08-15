@@ -55,7 +55,7 @@ class TwilioPlugin(Plugin):
         body = self.app.listen_once(duration=7.0)
         self.app.logger.debug(body)
         if not body:
-            self.app.play_sound("wav/try_again.mp3")
+            self.app.play_sound("sound/try_again.mp3")
             body = self.app.listen_once(duration=7.0)
             self.app.logger.debug(body)
             if not body:
