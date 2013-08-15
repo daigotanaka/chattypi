@@ -34,7 +34,7 @@ def register(app):
         return
     global wra_plugin
     wra_plugin = WolfRamAlphaPlugin(app)
-    app.register_command(["search", "what is", "what's", "who is", "where is"], "search", wra_plugin.search)
+    app.register_command(["search", "question", "what is", "what's", "who is", "where is"], "search", wra_plugin.search)
 
 
 class WolfRamAlphaPlugin(Plugin):
@@ -43,6 +43,10 @@ class WolfRamAlphaPlugin(Plugin):
         super(WolfRamAlphaPlugin, self).__init__(app)
 
     def search(self, param):
+        if not param:
+            param = self.get_query()
+        if not param:
+            return
         query = param
         self.app.say("Searching: " + query, nowait=True)
         answer = self.wolframalpha.search(query)
@@ -51,6 +55,19 @@ class WolfRamAlphaPlugin(Plugin):
         for sentences in re.split(r" *[\?\(!|\n][\'\"\)\]]* *", answer):
             for sentence in sentences.split(". "):
                 self.app.say(sentence)
+
+    def get_query(self):
+        self.app.say("What do you want me to search?")
+        query = self.app.listen_once(duration=7.0)
+        self.app.logger.debug(query)
+        if not query:
+            self.app.say("Sorry, I could not understand. Try again.")
+            query = self.app.listen_once(duration=7.0)
+            self.app.logger.debug(query)
+            if not query:
+                self.app.say("Sorry.")
+                return
+        return query
 
 
 class WolfRamAlphaSearch(object):
