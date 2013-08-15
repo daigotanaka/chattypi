@@ -288,8 +288,9 @@ class Application(object):
         return text[len(command):].strip(" ")
 
     def is_cue(self, text):
-        if text.lower().strip(" ") in [self.nickname, "hey", "ok", "okay", "hey " + self.nickname, "ok " + self.nickname, "okay " + self.nickname]:
-            return True
+        for key in [self.nickname, "hey", "ok", "okay", "hey " + self.nickname, "ok " + self.nickname, "okay " + self.nickname]:
+            if key in text.lower():
+                return True
         return False
 
     def is_command(self, text, command):

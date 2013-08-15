@@ -57,7 +57,7 @@ class TwilioPlugin(Plugin):
         if not body:
             self.app.say("Sorry, I could not understand. Try again.")
             body = self.app.listen_once(duration=7.0)
-            self.app.logger(body)
+            self.app.logger.debug(body)
             if not body:
                 self.app.say("Sorry.")
                 return
