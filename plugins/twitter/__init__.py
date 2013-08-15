@@ -33,7 +33,7 @@ def register(app):
         return
     global twitter_plugin
     twitter_plugin = TwitterPlugin(app)
-    app.register_command(["tweet"], "tweet", twitter_plugin.tweet)
+    app.register_command(["tweet", "twitter"], "tweet", twitter_plugin.tweet)
 
 class TwitterPlugin(Plugin):
     def __init__(self, app):
@@ -45,11 +45,18 @@ class TwitterPlugin(Plugin):
         )
         super(TwitterPlugin, self).__init__(app)
 
-    def tweet(self, param):
-        if not param:
-            self.app.say("I don't know what you want me to tweet")
+    def tweet(self):
+        self.app.say("What do you want me to tweet?")
+        status = self.app.listen_once(duration=7.0)
+        self.app.logger.debug(status)
+        if not status:
+            self.app.say("Sorry, I could not understand. Try again.")
+            status = self.app.listen_once(duration=7.0)
+            self.app.logger.debug(status)
+            if not status:
+                self.app.say("Sorry.")
+                return
 
-        status = param
         self.app.say("The status, " + status + " will be tweeted.")
         if not self.app.confirm("Is that OK?"):
             self.app.say("Cancelled")
