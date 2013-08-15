@@ -152,7 +152,7 @@ class Application(object):
         if self.vol_samples == 6:
             if not self.get_ip():
                 # The internet is down
-                self.play_sound("wav/down.wav")
+                self.play_sound("sound/down.wav")
 
                 # Make the computer greet again when the internet is back
                 self.greeted = False
@@ -162,14 +162,14 @@ class Application(object):
                     sleep(10)
                     return
 
-                self.play_sound("wav/bloop_x.wav")
+                self.play_sound("sound/bloop_x.wav")
                 exit()
 
             # We have the internet
             self.inet_check_attempts = 0
 
             if not self.greeted:
-                self.say(self.nickname + " " + config.get("system")["greeting"])
+                self.play_sound("sound/voice_command_ready.mp3")
                 self.greeted = True
 
         vol = self.get_volume(duration=self.idle_duration)
@@ -196,7 +196,7 @@ class Application(object):
 
         else:
             self.logger.info("yes?")
-            self.play_sound("wav/yes_q.wav")
+            self.play_sound("sound/yes.mp3")
 
         text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
         if not text:
@@ -210,8 +210,7 @@ class Application(object):
         return
 
     def exit_program(self):
-        message = "Voice command off"
-        self.say(message, nowait=True)
+        self.play_sound("sound/voice_command_off.mp3")
         self.clean_files()
         self.exit_now = True
 
@@ -220,12 +219,12 @@ class Application(object):
         self.sleep = False
 
     def reboot(self):
-        self.say("Rebooting...")
+        self.play_sound("sound/rebooting.mp3")
         self.clean_files()
         os.system("sudo reboot")
  
     def shutdown(self):
-        self.say("Shutting down...")
+        self.play_sound("sound/shutting_down.mp3")
         self.clean_files()
         os.system("sudo shutdown -h now")
 
@@ -374,7 +373,7 @@ class Application(object):
 
         self.logger.debug("Heard at volume = %.2f" % vol)
         if acknowledge:
-            self.play_sound("wav/click_x.wav", nowait=True)
+            self.play_sound("sound/click_x.wav", nowait=True)
         text = self.get_text_from_last_heard()
 
         if text:
@@ -429,11 +428,11 @@ class Application(object):
         nickname = self.listen_once(duration=7.0)
         self.logger.debug(nickname)
         if not nickname:
-            self.say("Sorry, I could not understand. Try again.")
+            self.play_sound("sound/try_again.mp3")
             nickname = self.listen_once(duration=7.0)
             self.logger.debug(nickname)
             if not nickname:
-                self.say("Sorry.")
+                self.play_sound("sound/sorry.mp3")
                 return
         self.say("What is the number for " + nickname + "?")
         number = self.listen_once(duration=10.0)
@@ -441,12 +440,12 @@ class Application(object):
         self.logger.debug(number)
         phone_validator = re.compile(r"^\d{10}$")
         if phone_validator.match(number) is None:
-            self.say("Sorry, I could not understand. Try again.")
+            self.play_sound("sound/try_again.mp3")
             number = self.listen_once(duration=10.0)
             number = re.sub(r"\D", "", number)
             self.logger.debug(number)
             if number is None or phone_validator.match(number) is None:
-                self.say("Sorry.")
+                self.play_sound("sound/sorry.mp3")
                 return
         self.addressbook.add(nickname, number)
         self.say("The phone number " + " ".join(number) + " for " + nickname + " was added.")

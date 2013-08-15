@@ -57,15 +57,15 @@ class WolfRamAlphaPlugin(Plugin):
                 self.app.say(sentence)
 
     def get_query(self):
-        self.app.say("What do you want me to search?")
+        self.app.play_sound("sound/what_question.mp3")
         query = self.app.listen_once(duration=7.0)
         self.app.logger.debug(query)
         if not query:
-            self.app.say("Sorry, I could not understand. Try again.")
+            self.app.play_sound("sound/try_again.mp3")
             query = self.app.listen_once(duration=7.0)
             self.app.logger.debug(query)
             if not query:
-                self.app.say("Sorry.")
+                self.app.play_sound("sound/sorry.mp3")
                 return
         return query
 

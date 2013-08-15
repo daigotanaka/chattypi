@@ -51,20 +51,20 @@ class MailgunPlugin(Plugin):
             self.app.say("Sorry, I cannot find the contact")
             return
         self.app.logger.debug(to_)
-        self.app.say("What message do you want me to send?")
+        self.app.play_sound("sound/what_message.mp3")
         body = self.app.listen_once(duration=7.0)
         self.app.logger.debug(body)
         if not body:
-            self.app.say("Sorry, I could not understand. Try again.")
+            self.app.play_sound("sound/try_again.mp3")
             body = self.app.listen_once(duration=7.0)
             self.app.logger.debug(body)
             if not body:
-                self.app.say("Sorry.")
+                self.app.play_sound("sound/sorry.mp3")
                 return
         name = self.app.addressbook.get_fullname(nickname)
         self.app.say("Your said, " + body)
         if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_ + ". Is that OK?"):
-            self.app.say("Cancelled")
+            self.app.play_sound("sound/cancelled.mp3")
             return
         try:
             to_email = name + "<" + to_ + ">" if name else to_
@@ -72,4 +72,4 @@ class MailgunPlugin(Plugin):
         except Exception, err:
             self.app.say("I got an error sending message")
             return
-        self.app.say("The message was sent")
+        self.app.play_sound("sound/message_sent.mp3")
