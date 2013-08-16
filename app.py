@@ -64,7 +64,6 @@ class Application(object):
         self.exist_now = False
         self.nickname = config.get("nickname")
         self.user = config.get("user")
-        self.threshold = config.get("audio")["threshold"]
         self.min_volume = config.get("audio")["min_volume"]
         self.sample_rate = config.get("audio")["sample_rate"]
         self.idle_duration = config.get("audio")["idle_duration"]
@@ -352,8 +351,7 @@ class Application(object):
         return vol
 
     def is_loud(self, vol):
-        if (self.min_volume< vol
-            and (0 < self.threshold < vol or 0 < self.vol_average * 1.5 < vol)):
+        if self.min_volume < vol and (self.vol_average * 1.5 < vol):
             return True
         return False
 
