@@ -200,6 +200,7 @@ class Application(object):
         text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
         if not text:
             self.logger.debug("?")
+            self.play_sound("sound/bloop_x.wav")
             return
 
         self.logger.debug("Excecuting order...")
@@ -399,19 +400,22 @@ class Application(object):
             return None
         return s.getsockname()[0]
 
-    def confirm(self, message):
-        self.say(message)
+    def confirm(self, message=None):
+        if message:
+            self.say(message)
+        else:
+            self.play_sound("sound/is_that_ok.mp3")
         text = self.listen_once(duration=3.0)
         self.logger.debug(text)
         count = 0
         while (count < 2
-            and (not text or (text.lower() != "yes" and text.lower() != "no"))):
+            and (not text or not ("yes" in text.lower() or "no" in text.lower()))):
             count += 1
             self.logger.debug(message)
-            self.say("Sorry, I could not catch that." + message)
+            self.play_sound("sound/yes_or_no.mp3")
             text = self.listen_once(duration=3.0)
             self.logger.debug(text)
-        if text and text.lower() == "yes":
+        if text and "yes" in text.lower():
             return True
         return False
 

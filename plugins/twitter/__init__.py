@@ -58,7 +58,7 @@ class TwitterPlugin(Plugin):
                 return
 
         self.app.say("The status, " + status + " will be tweeted.")
-        if not self.app.confirm("Is that OK?"):
+        if not self.app.confirm():
             self.app.play_sound("sound/cancelled.mp3")
             return
         self.app.play_sound("sound/tweeted.mp3")
