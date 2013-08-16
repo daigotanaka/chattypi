@@ -287,8 +287,10 @@ class Application(object):
         return text[len(command):].strip(" ")
 
     def is_cue(self, text):
-        for key in [self.nickname, "hey", "ok", "okay", "hey " + self.nickname, "ok " + self.nickname, "okay " + self.nickname]:
-            if key in text.lower():
+        cues = config.get("system")["cue"].split(" ")
+        cues.append(self.nickname)
+        for cue in cues:
+            if cue in text.lower():
                 return True
         return False
 

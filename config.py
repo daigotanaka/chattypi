@@ -37,6 +37,7 @@ logfile = string(max=1024, default="/home/pi/chattypi/chattypi.log")
 usr_bin = string(max=1024, default="/usr/bin")
 default_path = string(max=1024, default="/home/pi/chattypi")
 inet_check_max_attempts = integer(1, 10, default=3)
+cue = string(max=1024, default="hey ok okay listen")
 
 [addressbook]
 file = string(max=1024, default="/home/pi/chattypi/data/addressbook.csv")
