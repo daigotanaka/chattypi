@@ -44,11 +44,16 @@ class Application(object):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(config.get("system")["logfile"])
-        fh.setLevel(logging.INFO)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+
+        if config.get("debug") == True:
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.DEBUG)
+            self.logger.addHandler(ch)
+            fh.setLevel(logging.DEBUG)
+        else:
+            fh.setLevel(logging.INFO)
+
         self.logger.addHandler(fh)
-        self.logger.addHandler(ch)
 
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]

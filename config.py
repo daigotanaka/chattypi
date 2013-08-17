@@ -26,7 +26,7 @@ from validate import Validator
 
 
 CONFIGSPEC = """
-DEBUG = boolean(default=True)
+debug = boolean(default=False)
 
 nickname = string(max=32, default="computer")
 username = string(max=32, default="pi")
