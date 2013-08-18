@@ -67,7 +67,8 @@ class Application(object):
         self.greeted = False
         self.sleep = False
         self.exist_now = False
-        self.nickname = config.get("nickname")
+        self.nickname = config.get("computer_nickname")
+        self.user_nickname = config.get("user_nickname")
         self.user = config.get("user")
         self.min_volume = config.get("audio")["min_volume"]
         self.mute_volume = config.get("audio")["mute_volume"]
@@ -161,6 +162,7 @@ class Application(object):
         if self.vol_samples == 6:
             if not self.get_ip():
                 # The internet is down
+                self.logger.info("%s: The internet is down" % self.nickname)
                 self.play_sound("sound/down.wav")
 
                 # Make the computer greet again when the internet is back
@@ -171,6 +173,7 @@ class Application(object):
                     sleep(10)
                     return
 
+                self.logger.info("%s: ?" % self.nickname)
                 self.play_sound("sound/bloop_x.wav")
                 exit()
 
@@ -178,6 +181,7 @@ class Application(object):
             self.inet_check_attempts = 0
 
             if not self.greeted:
+                self.logger.info("%s: Voice command ready" % self.nickname)
                 self.play_sound("sound/voice_command_ready.mp3")
                 self.greeted = True
 
@@ -202,7 +206,7 @@ class Application(object):
             self.logger.debug("I thought I heard something...")
             self.update_noise_level(vol)
             return
-        self.logger.info("You said, %s" % text)
+        self.logger.info("%s: %s" % (self.user_nickname, text))
 
         if not self.is_cue(text):
             return
@@ -211,9 +215,8 @@ class Application(object):
             self.logger.debug("Zzz...")
 
         else:
-            self.logger.info("yes?")
+            self.logger.info("%s: yes?" % self.nickname)
             self.play_sound("sound/yes.mp3")
-
         text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
         if not text:
             self.logger.debug("?")
@@ -223,10 +226,10 @@ class Application(object):
         self.logger.debug("Excecuting order...")
         self.execute_order(text)
 
-
         return
 
     def exit_program(self):
+        self.logger.info("%s: Voice command off" % self.nickname)
         self.play_sound("sound/voice_command_off.mp3")
         self.clean_files()
         self.exit_now = True
@@ -236,11 +239,13 @@ class Application(object):
         self.sleep = False
 
     def reboot(self):
+        self.logger.info("%s: Rebooting..." % self.nickname)
         self.play_sound("sound/rebooting.mp3")
         self.clean_files()
         os.system("sudo reboot")
  
     def shutdown(self):
+        self.logger.info("%s: Shutting down..." % self.nickname)
         self.play_sound("sound/shutting_down.mp3")
         self.clean_files()
         os.system("sudo shutdown -h now")
@@ -364,7 +369,7 @@ class Application(object):
         os.system(cmd)
 
     def say(self, text, nowait=False):
-        self.logger.info(text)
+        self.logger.info("%s: %s" % (self.nickname, text))
         param = urllib.urlencode({"tl": "en", "q": text})
         url = "http://translate.google.com/translate_tts?" + param
         if not nowait:
@@ -411,7 +416,7 @@ class Application(object):
         if acknowledge:
             self.play_sound("sound/click_x.wav", nowait=True)
         text = self.get_text_from_last_heard()
-
+        self.logger.info("%s: %s" % (self.user_nickname, text))
         if text:
             return text.strip(" ")
         return None
@@ -421,12 +426,14 @@ class Application(object):
         if content:
             return content
 
+        self.logger.info("%s: Sorry, I could not catch that. Please try again." % self.nickname)
         self.play_sound("sound/try_again.mp3")
         content = self.listen_once(duration=duration)
         self.logger.debug(content)
         if content:
             return content
 
+        self.logger.info("%s: Sorry" % self.nickname)
         self.play_sound("sound/sorry.mp3")
         return None
 
@@ -455,6 +462,7 @@ class Application(object):
         if message:
             self.say(message)
         else:
+            self.logger.info("%s: Is that OK?" % self.nickname)
             self.play_sound("sound/is_that_ok.mp3")
         text = self.listen_once(duration=3.0)
         self.logger.debug(text)
@@ -463,6 +471,7 @@ class Application(object):
             and (not text or not ("yes" in text.lower() or "no" in text.lower()))):
             count += 1
             self.logger.debug(message)
+            self.logger.info("%s: Please answer by yes or no" % self.nickname)
             self.play_sound("sound/yes_or_no.mp3")
             text = self.listen_once(duration=3.0)
             self.logger.debug(text)
@@ -478,26 +487,22 @@ class Application(object):
 
         """
         self.say("What is the contact's nick name?")
-        nickname = self.listen_once(duration=7.0)
-        self.logger.debug(nickname)
+        nickname = self.record_content(duration=7.0)
         if not nickname:
-            self.play_sound("sound/try_again.mp3")
-            nickname = self.listen_once(duration=7.0)
-            self.logger.debug(nickname)
-            if not nickname:
-                self.play_sound("sound/sorry.mp3")
-                return
+            return
         self.say("What is the number for " + nickname + "?")
         number = self.listen_once(duration=10.0)
         number = re.sub(r"\D", "", number)
         self.logger.debug(number)
         phone_validator = re.compile(r"^\d{10}$")
         if phone_validator.match(number) is None:
+            self.logger.info("%s: Sorry, I could not catch that. Please try again." % self.nickname)
             self.play_sound("sound/try_again.mp3")
             number = self.listen_once(duration=10.0)
             number = re.sub(r"\D", "", number)
             self.logger.debug(number)
             if number is None or phone_validator.match(number) is None:
+                self.logger.info("%s: Sorry." % self.nickname)
                 self.play_sound("sound/sorry.mp3")
                 return
         self.addressbook.add(nickname, number)

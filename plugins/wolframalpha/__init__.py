@@ -57,6 +57,7 @@ class WolfRamAlphaPlugin(Plugin):
                 self.app.say(sentence)
 
     def get_query(self):
+        self.app.logger.info("%s: What do you want to search?" % self.app.nickname)
         self.app.play_sound("sound/what_question.mp3")
         query = self.app.record_content(duration=7.0)
         if not query:

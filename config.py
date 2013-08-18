@@ -28,7 +28,8 @@ from validate import Validator
 CONFIGSPEC = """
 debug = boolean(default=False)
 
-nickname = string(max=32, default="computer")
+computer_nickname = string(max=32, default="computer")
+user_nickname = string(max=32, default="master")
 username = string(max=32, default="pi")
 email = string(max=256)
 
