@@ -103,6 +103,9 @@ class Application(object):
             "status report": ("status report", self.status_report),
             "status update": ("status report", self.status_report),
             "turn on": ("turn on", self.turn_on),
+            "switch on": ("turn on", self.turn_on),
+            "turn off": ("turn off", self.turn_off),
+            "switch off": ("turn off", self.turn_off),
         }
 
         for command in core_commands:
@@ -141,7 +144,7 @@ class Application(object):
                     % command)
             self.command2signal[command] = signal
             dispatcher.connect(func, signal=signal, sender=dispatcher.Any)
-            self.logger.info("Registered '%s' command with '%s' singnal"
+            self.logger.debug("Registered '%s' command with '%s' singnal"
                 % (command, signal))
 
 
@@ -255,11 +258,29 @@ class Application(object):
             + ". Your voice is %.1f" % self.current_volume)
 
     def turn_on(self, param):
-        message = "I did not understand."
+        message = "I don't know how to turn on %s" % param
         if param.lower() == "vnc server":
             self.system(os.path.join(self.usr_bin_path, "vncserver") + " :1")
             message = "VNC server is on"
+        elif "debug mode" in param.lower() or "debugging mode" in param.lower():
+            if self.config.get("debug"):
+                message = "Debug mode is already on"
+            else:
+                self.config.set("debug", True)
+                message = "Turned on debug mode"
         self.say(message)
+
+    def turn_off(self, param):
+        message = "I don't know how to turn off %s" % param
+        if "debug mode" in param.lower() or "debugging mode" in param.lower():
+            if not self.config.get("debug"):
+                message = "Debug mode is already off"
+            else:
+                self.config["debug"] = False
+                self.config.write()
+                message = "Turned off debug mode"
+        self.say(message)
+
 
     def execute_order(self, text):
         for command in self.command2signal:
