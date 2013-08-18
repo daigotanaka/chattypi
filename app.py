@@ -293,7 +293,7 @@ class Application(object):
                 continue
             sig = self.command2signal[command]
             param = self.get_param(text, command)
-            self.logger.info("Dispatching signal: %s" % sig)
+            self.logger.debug("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
             dispatcher.send(signal=sig, **kwargs)
             return
