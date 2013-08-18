@@ -47,16 +47,9 @@ class TwitterPlugin(Plugin):
 
     def tweet(self):
         self.app.play_sound("sound/what_tweet.mp3")
-        status = self.app.listen_once(duration=7.0)
-        self.app.logger.debug(status)
+        status = self.app.record_content(duration=7.0)
         if not status:
-            self.app.play_sound("sound/try_again.mp3")
-            status = self.app.listen_once(duration=7.0)
-            self.app.logger.debug(status)
-            if not status:
-                self.app.play_sound("sound/sorry.mp3")
-                return
-
+            return
         self.app.say("The status, " + status + " will be tweeted.")
         if not self.app.confirm():
             self.app.play_sound("sound/cancelled.mp3")

@@ -52,15 +52,9 @@ class TwilioPlugin(Plugin):
             return
         self.app.logger.debug(to_)
         self.app.play_sound("sound/what_message.mp3")
-        body = self.app.listen_once(duration=7.0)
-        self.app.logger.debug(body)
+        body = self.app.record_content(duration=7.0)
         if not body:
-            self.app.play_sound("sound/try_again.mp3")
-            body = self.app.listen_once(duration=7.0)
-            self.app.logger.debug(body)
-            if not body:
-                self.app.play_sound("sound/sorry.mp3")
-                return
+            return
         to_verbal = " ".join(to_)
         name = self.app.addressbook.get_fullname(nickname)
         self.app.say("Your said, " + body)
