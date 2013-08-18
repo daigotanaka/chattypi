@@ -41,10 +41,10 @@ from speech2text import Speech2Text
 class Application(object):
 
     def __init__(self):
+        self.config = config
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(config.get("system")["logfile"])
-
         if config.get("debug") == True:
             ch = logging.StreamHandler()
             ch.setLevel(logging.DEBUG)
@@ -414,6 +414,20 @@ class Application(object):
 
         if text:
             return text.strip(" ")
+        return None
+
+    def record_content(self, duration=10.0):
+        content = self.listen_once(duration=duration)
+        if content:
+            return content
+
+        self.play_sound("sound/try_again.mp3")
+        content = self.listen_once(duration=duration)
+        self.logger.debug(content)
+        if content:
+            return content
+
+        self.play_sound("sound/sorry.mp3")
         return None
 
     def update_noise_level(self, vol):
