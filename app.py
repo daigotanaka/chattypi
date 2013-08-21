@@ -71,7 +71,6 @@ class Application(object):
         self.user_nickname = config.get("user_nickname")
         self.user = config.get("user")
         self.min_volume = config.get("audio")["min_volume"]
-        self.mute_volume = config.get("audio")["mute_volume"]
         self.sample_rate = config.get("audio")["sample_rate"]
         self.idle_duration = config.get("audio")["idle_duration"]
         self.take_order_duration = config.get("audio")["take_order_duration"]
@@ -188,10 +187,10 @@ class Application(object):
         vol = self.get_volume(duration=self.idle_duration)
         self.logger.debug("vol=%.4f avg=%.2f" % (vol, self.vol_average))
 
-        if vol < self.mute_volume:
+        if vol < self.min_volume:
             self.prev_idle_vol = vol
             return
-        if not self.is_loud(vol) and self.prev_idle_vol > self.mute_volume:
+        if not self.is_loud(vol) and self.prev_idle_vol > self.min_volume:
             self.prev_idle_vol = vol
             self.update_noise_level(vol)
             return
@@ -199,7 +198,7 @@ class Application(object):
         self.logger.debug("!")
 
         # If the mic was muted previously and turned on, prompt for command
-        text = self.get_text_from_last_heard() if self.prev_idle_vol > self.mute_volume else self.nickname
+        text = self.get_text_from_last_heard() if self.prev_idle_vol > self.min_volume else self.nickname
         self.prev_idle_vol = vol
 
         if not text:

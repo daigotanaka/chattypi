@@ -49,7 +49,6 @@ out_device = integer(0, 1, default=0)
 in_device = string(max=256, default="plughw:1,0")
 sample_rate = integer(16000, 48000, default=8000)
 min_volume = float(0.0, 10.0, default=0.1)
-mute_volume = float(0.0, 0.1, default=0.01)
 idle_duration = float(1.0, 5.0, default=2.0)
 take_order_duration = float(2.0, 10.0, default=6.0)
 """
