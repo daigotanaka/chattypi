@@ -35,6 +35,7 @@ def register(app):
     global wra_plugin
     wra_plugin = WolfRamAlphaPlugin(app)
     app.register_command(["search", "question", "what is", "what's", "who is", "where is"], "search", wra_plugin.search)
+    app.register_command(["search by spelling"], "search by spelling", wra_plugin.search_by_spelling)
 
 
 class WolfRamAlphaPlugin(Plugin):
@@ -55,6 +56,16 @@ class WolfRamAlphaPlugin(Plugin):
         for sentences in re.split(r" *[\?\(!|\n][\'\"\)\]]* *", answer):
             for sentence in sentences.split(". "):
                 self.app.say(sentence)
+
+    def search_by_spelling(self):
+        self.app.logger.info("%s: Please spell the search keyword" % self.app.nickname)
+        raw = self.get_query()
+        words = raw.split(" ")
+        query = ""
+        for word in words:
+            query += word[0]
+        if query:
+            self.search(query.lower())
 
     def get_query(self):
         self.app.logger.info("%s: What do you want to search?" % self.app.nickname)
