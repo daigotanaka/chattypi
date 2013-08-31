@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import re
 import sys
 
 import wolframalpha
@@ -53,9 +52,7 @@ class WolfRamAlphaPlugin(Plugin):
         answer = self.wolframalpha.search(query)
         self.app.logger.debug("Answer: %s" % answer)
 
-        for sentences in re.split(r" *[\?\(!|\n][\'\"\)\]]* *", answer):
-            for sentence in sentences.split(". "):
-                self.app.say(sentence)
+        self.app.say(answer)
 
     def search_by_spelling(self):
         self.app.logger.info("%s: Please spell the search keyword" % self.app.nickname)

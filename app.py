@@ -368,6 +368,18 @@ class Application(object):
         os.system(cmd)
 
     def say(self, text, nowait=False):
+        if not text.strip(" "):
+            return
+        text = re.sub(r"[ \.]([A-Z])[.]", r" \1 ", text)
+        text = re.sub(r"[ ][ ]*", r" ", text)
+        sentences = re.split(r" *[\.\?\(!|\n][\'\"\)\]]* *", text)
+        if len(text) >= 60 and len(sentences) > 1:
+            for sentence in sentences:
+                subsentences = [sentence] if sentence < 60 else sentence.split(",")
+                for subsentence in subsentences:
+                    self.say(subsentence, nowait)
+            return
+
         self.logger.info("%s: %s" % (self.nickname, text))
         param = urllib.urlencode({"tl": "en", "q": text})
         url = "http://translate.google.com/translate_tts?" + param

@@ -36,6 +36,7 @@ class AddressBook(object):
         self.fullname_field = "Name"
         self.primary_phone_field = "Phone 1 - Value"
         self.primary_email_field = "E-mail 1 - Value"
+        self.twitter_field = "Custom Field 1 - Value"
         self.file = file
         self.book = {}
         if not os.path.exists(file):
@@ -89,7 +90,15 @@ class AddressBook(object):
             return None
         email = row[self.get_field_index(self.primary_email_field)]
         return email
- 
+
+    def get_twitter_username(self, nickname):
+        row = self.get_row(nickname)
+        if not row:
+            return None
+        username = row[self.get_field_index(self.twitter_field)]
+        return username
+
+
 if __name__ == "__main__":
     addressbook = AddressBook("pi", "./addressbook.csv")
     print addressbook.fields

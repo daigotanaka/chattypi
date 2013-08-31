@@ -22,6 +22,8 @@
 
 import os
 import oauth2 as oauth
+import re
+import simplejson
 import urllib
 
 from plugins import Plugin
@@ -34,6 +36,7 @@ def register(app):
     global twitter_plugin
     twitter_plugin = TwitterPlugin(app)
     app.register_command(["tweet", "twitter"], "tweet", twitter_plugin.tweet)
+    app.register_command(["read tweets by"], "read_tweets", twitter_plugin.read_tweets)
 
 class TwitterPlugin(Plugin):
     def __init__(self, app):
@@ -60,6 +63,18 @@ class TwitterPlugin(Plugin):
         self.app.play_sound("sound/tweeted.mp3")
         self.twitter.tweet(status)
 
+    def read_tweets(self, param):
+        nickname = param
+        username = self.app.addressbook.get_twitter_username(nickname.lower())
+        if not username:
+            self.app.say("Sorry, I cannot find the twitter username")
+            return
+        statuses = self.twitter.get_tweets(username)
+
+        for status in statuses:
+            text = status["text"] + " "
+            text = re.sub("http:\/\/.* ", "", text)
+            self.app.say(text)
 
 class Twitter(object):
 
@@ -78,9 +93,27 @@ class Twitter(object):
             return
 
         endpoint = "http://api.twitter.com/1.1/statuses/update.json"
-        response, data = self.client.request(endpoint,
+        response, data = self.client.request(
+            endpoint,
             method="POST",
-            body=urllib.urlencode({"status": status, "wrap_links": True}))
+            body=urllib.urlencode({"status": status, "wrap_links": True})
+        )
+
+    def get_tweets(self, username, count=5, exclude_replies=True):
+        if not username:
+            return
+        endpoint = "https://api.twitter.com/1.1/statuses/user_timeline.json"
+        params = urllib.urlencode({
+                "screen_name": username,
+                "count": count,
+                "exclude_replies": exclude_replies
+        })
+        response, data = self.client.request(
+            endpoint + "?" + params,
+            method="GET",
+        )
+        statuses = simplejson.loads(data)
+        return statuses
 
 
 if __name__ == "__main__":
