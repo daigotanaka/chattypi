@@ -78,8 +78,10 @@ class TwitterPlugin(Plugin):
             text = re.sub("http:\/\/.* ", "", text)
             # Twitter returns GMT time in the format like this:
             # Mon Sep 16 06:57:38 +0000 2013
-            tweeted_at = datetime.datetime.strptime(status["created_at"],
-                    "%a %b %d %H:%M:%S %z %Y")
+            # Python 2.x does not support %z, so converting to "GMT"
+            tweeted_at = datetime.datetime.strptime(
+                    status["created_at"].replace("+0000", "GMT"),
+                    "%a %b %d %H:%M:%S %Z %Y")
             tweeted_at_pretty = pretty.date(tweeted_at)
 
             self.app.say(text)
