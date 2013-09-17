@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,8 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import datetime
 import os
 import oauth2 as oauth
+import pretty
 import re
 import simplejson
 import urllib
@@ -74,7 +76,14 @@ class TwitterPlugin(Plugin):
         for status in statuses:
             text = status["text"] + " "
             text = re.sub("http:\/\/.* ", "", text)
+            # Twitter returns GMT time in the format like this:
+            # Mon Sep 16 06:57:38 +0000 2013
+            tweeted_at = datetime.datetime.strptime(status["created_at"],
+                    "%a %b %d %H:%M:%S %z %Y")
+            tweeted_at_pretty = pretty.date(tweeted_at)
+
             self.app.say(text)
+            self.app.say(tweeted_at_pretty)
 
 class Twitter(object):
 
@@ -87,7 +96,7 @@ class Twitter(object):
         self.consumer = oauth.Consumer(key=self.consumer_key, secret=self.consumer_secret)
         self.access_token = oauth.Token(key=self.access_key, secret=self.access_secret)
         self.client = oauth.Client(self.consumer, self.access_token)
- 
+
     def tweet(self, status):
         if not status:
             return
