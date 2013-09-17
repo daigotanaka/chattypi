@@ -26,6 +26,7 @@ import oauth2 as oauth
 import pretty
 import re
 import simplejson
+import time
 import urllib
 
 from plugins import Plugin
@@ -82,6 +83,7 @@ class TwitterPlugin(Plugin):
             tweeted_at = datetime.datetime.strptime(
                     status["created_at"].replace("+0000", "GMT"),
                     "%a %b %d %H:%M:%S %Z %Y")
+            tweeted_at = tweeted_at - datetime.timedelta(seconds=time.timezone - 3600 * time.daylight)
             tweeted_at_pretty = pretty.date(tweeted_at)
 
             self.app.say(text)
