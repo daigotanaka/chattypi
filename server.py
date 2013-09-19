@@ -24,18 +24,18 @@
 
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import os
 import json
 
 class WebServer(Flask):
 
-    def __init__(self, app=None, name=__name__, host="0.0.0.0", port=8000, template="./template/"):
-        self.app = app
+    def __init__(self, name=__name__, host="0.0.0.0", port=8000, template="./template/"):
         self.name = name
-        self.host = self.app.get_ip() if host == "auto" and self.app else host
+        self.host = host
         self.port = port
         self.template_folder = template
+        self.sockets = set()
 
     def create_instance(self):
         self.flask = Flask(self.name, template_folder=self.template_folder)
@@ -58,20 +58,50 @@ class WebServer(Flask):
         return self.flask(environ, start_response)
  
     def handle_websocket(self, ws):
+        if not ws in self.sockets and len(self.sockets) > 10:
+            self.exceeded_max_connection(ws)
+
+        self.sockets.add(ws)
         while True:
             message = ws.receive()
             if message is None:
                 break
             message = json.loads(message)
-            ws.send(json.dumps({'output': message['output']}))
+            for socket in self.sockets:
+                socket.send(json.dumps({"output": message["output"]}))
+
+    def exceeded_max_connection(self, ws):
+        ws.send(json.dumps({"output": "Sorry, max connection reached."}))
+
+    def update_screen(self, html=None):
+        html = html or "<img src=\"http://placekitten.com/300/200\">"
+        for socket in self.sockets:
+            socket.send(json.dumps({"output": html}))
 
 
-if __name__ == '__main__':
-    server = WebServer()
-    flask = server.create_instance()
+server = WebServer()
+flask = server.create_instance()
 
-    @flask.route('/')
-    def index():
-        return render_template('test.html', port=server.port)
 
+@flask.route("/")
+def index():
+    return render_template("index.html", port=server.port)
+
+
+@flask.route("/update/", methods=["POST"])
+def update():
+    html = request.form["html"] or None
+    server.update_screen(html=html)
+    return render_template("index.html", port=server.port)
+
+
+@flask.route("/test/")
+def test():
+    return render_template("test.html", port=server.port)
+
+
+def start_server(args=None):
     server.start()
+
+if __name__ == "__main__":
+    start_server()

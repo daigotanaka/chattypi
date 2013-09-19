@@ -22,15 +22,16 @@
 
 from config import config
 import logging
+from multiprocessing import Process
 import os
 from pydispatch import dispatcher
 import re
-from server import *
+from server import start_server
 import socket
 import subprocess
-import thread
 from time import sleep
 import urllib
+import urllib2
 
 
 from addressbook import AddressBook
@@ -108,6 +109,8 @@ class Application(object):
             "switch on": ("turn on", self.turn_on),
             "turn off": ("turn off", self.turn_off),
             "switch off": ("turn off", self.turn_off),
+            "show me a cat picture": ("cat", self.update_screen),
+            "show me ticket": ("jira", self.show_jira_ticket),
         }
 
         for command in core_commands:
@@ -495,6 +498,20 @@ class Application(object):
     def system(self, cmd):
         return libs.system(user=self.user, command=cmd)
 
+    def update_screen(self, html=None):
+        url = "http://0.0.0.0:8000/update/"
+        user_agent = "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)"
+        values = {
+            "html" : html }
+        headers = { "User-Agent" : user_agent }
+        data = urllib.urlencode(values)
+        req = urllib2.Request(url, data, headers)
+        response = urllib2.urlopen(req)
+        the_page = response.read()
+
+    def show_jira_ticket(self, param):
+        self.update_screen(html="<iframe src=\"https://fivestars.atlassian.net/browse/SOFTWARE-" + param + "\" style=\"width:100%; height:600px;\"></iframe>")
+
     def add_contact(self):
         self.say("This feature is currently unsupported")
 
@@ -525,13 +542,8 @@ class Application(object):
 if __name__ == "__main__":
     app = Application()
 
-    server = WebServer(app=app)
-    flask = server.create_instance()
-
-    @flask.route('/')
-    def index():
-        return render_template('index.html', port=server.port)
+    process = Process(target=start_server, args=(None,))
+    process.start()
 
     app.run()
-    # thread.start_new_thread(app.run(), (None,))
-    # server.start()
+    process.stop()
