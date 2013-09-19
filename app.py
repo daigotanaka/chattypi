@@ -25,8 +25,10 @@ import logging
 import os
 from pydispatch import dispatcher
 import re
+from server import *
 import socket
 import subprocess
+import thread
 from time import sleep
 import urllib
 
@@ -148,7 +150,7 @@ class Application(object):
                 % (command, signal))
 
 
-    def run(self):
+    def run(self, args=None):
         self.loop()
 
     def loop(self):
@@ -522,4 +524,14 @@ class Application(object):
 
 if __name__ == "__main__":
     app = Application()
+
+    server = WebServer(app=app)
+    flask = server.create_instance()
+
+    @flask.route('/')
+    def index():
+        return render_template('index.html', port=server.port)
+
     app.run()
+    # thread.start_new_thread(app.run(), (None,))
+    # server.start()
