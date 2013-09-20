@@ -23,6 +23,7 @@
 # coding: utf-8
 
 from gevent.pywsgi import WSGIServer
+from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
 from flask import Flask, render_template, request
 import os
@@ -89,7 +90,7 @@ class WebServer(Flask):
                 erase_list.append(socket)
             try:
                 socket.send(json.dumps({"output": html}))
-            except geventwebsocket.WebSocketError:
+            except WebSocketError:
                 erase_list.append(socket)
         for socket in erase_list:
             self.sockets.remove(socket)
