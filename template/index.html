@@ -9,7 +9,11 @@
         ws = new WebSocket("ws://" + document.domain + ":{{port}}/websocket");
         ws.onmessage = function (msg) {
             var message = JSON.parse(msg.data);
-            $("div#output").html(message.output );
+            if (message.output.substring(0, 4) == "http") {
+                window.open(message.output, "result");
+            } else {
+                $("div#output").html(message.output );
+            }
         };
     };
     $('input[name=text]').on('keyup', function(e){

@@ -38,4 +38,4 @@ class ImageSearchPlugin(Plugin):
     def search(self, param, **kwargs):
         query = param
         self.app.say("Searching the image of %s" % query)
-        self.app.update_screen(html="<iframe src=\"http://www.google.com/search?hl=en&site=imghp&tbm=isch&q=%s\" style=\"width:100%%; height:600px\"></iframe>" % query)
+        self.app.update_screen(html="http://www.google.com/search?hl=en&site=imghp&tbm=isch&q=%s" % query)
