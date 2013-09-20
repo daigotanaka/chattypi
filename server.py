@@ -43,11 +43,11 @@ class WebServer(Flask):
         self.flask.debug = True
      
         self.http_server = WSGIServer((self.host,self.port), self.wsgi_app, handler_class=WebSocketHandler)
-        print("Server started at %s:%s" % (self.host,self.port))
 
         return self.flask
 
     def start(self, args=None):
+        print("Server started at %s:%s" % (self.host,self.port))
         self.http_server.serve_forever()
 
     def wsgi_app(self, environ, start_response):  
