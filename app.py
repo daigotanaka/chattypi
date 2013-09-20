@@ -110,8 +110,6 @@ class Application(object):
             "switch on": ("turn on", self.turn_on),
             "turn off": ("turn off", self.turn_off),
             "switch off": ("turn off", self.turn_off),
-            "show me a cat picture": ("cat", self.update_screen),
-            "show me ticket": ("jira", self.show_jira_ticket),
         }
 
         for command in core_commands:
@@ -511,9 +509,6 @@ class Application(object):
         req = urllib2.Request(url, data, headers)
         response = urllib2.urlopen(req)
         the_page = response.read()
-
-    def show_jira_ticket(self, param):
-        self.update_screen(html="<iframe src=\"https://fivestars.atlassian.net/browse/SOFTWARE-" + param + "\" style=\"width:100%; height:600px;\"></iframe>")
 
     def add_contact(self):
         self.say("This feature is currently unsupported")
