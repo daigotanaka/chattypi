@@ -374,14 +374,13 @@ class Application(object):
     def say(self, text, nowait=False):
         if not text.strip(" "):
             return
-        text = re.sub(r"[ \.]([A-Z])[.]", r" \1 ", text)
-        text = re.sub(r"[ ][ ]*", r" ", text)
-        sentences = re.split(r" *[\.\?\(!|\n][\'\"\)\]]* *", text)
-        if len(text) >= 60 and len(sentences) > 1:
-            for sentence in sentences:
-                subsentences = [sentence] if sentence < 60 else sentence.split(",")
-                for subsentence in subsentences:
-                    self.say(subsentence, nowait)
+        words = text.split(" ")
+        if len(words) > 10:
+            index = 0
+            while index < len(words):
+                block = " ".join(words[index:index + 10])
+                self.say(block, nowait)
+                index += 10
             return
 
         self.logger.info("%s: %s" % (self.nickname, text))
