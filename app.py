@@ -507,7 +507,11 @@ class Application(object):
         headers = { "User-Agent" : user_agent }
         data = urllib.urlencode(values)
         req = urllib2.Request(url, data, headers)
-        response = urllib2.urlopen(req)
+        try:
+            response = urllib2.urlopen(req)
+        except urllib2.HTTPError, err:
+            self.logger.info(err)
+            return
         the_page = response.read()
 
     def add_contact(self):
