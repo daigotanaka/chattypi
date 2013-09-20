@@ -58,25 +58,38 @@ class WebServer(Flask):
         return self.flask(environ, start_response)
  
     def handle_websocket(self, ws):
-        if not ws in self.sockets and len(self.sockets) > 10:
-            self.exceeded_max_connection(ws)
+        if not ws in self.sockets:
+            if len(self.sockets) > 10:
+                self.exceeded_max_connection(ws)
+            else:
+                self.sockets.add(ws)
 
-        self.sockets.add(ws)
         while True:
             message = ws.receive()
             if message is None:
                 break
             message = json.loads(message)
+            erase_list = []
             for socket in self.sockets:
+                if not socket.socket:
+                    erase_list.append(socket)
+                    continue
                 socket.send(json.dumps({"output": message["output"]}))
+            for socket in erase_list:
+                self.sockets.remove(socket)
 
     def exceeded_max_connection(self, ws):
         ws.send(json.dumps({"output": "Sorry, max connection reached."}))
 
     def update_screen(self, html=None):
         html = html or "<img src=\"http://placekitten.com/300/200\">"
+        erase_list = []
         for socket in self.sockets:
+            if not socket.socket:
+                erase_list.append(socket)
             socket.send(json.dumps({"output": html}))
+        for socket in erase_list:
+            self.sockets.remove(socket)
 
 
 server = WebServer()
@@ -93,11 +106,6 @@ def update():
     html = request.form["html"] or None
     server.update_screen(html=html)
     return render_template("index.html", port=server.port)
-
-
-@flask.route("/test/")
-def test():
-    return render_template("test.html", port=server.port)
 
 
 def start_server(args=None):

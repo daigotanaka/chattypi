@@ -9,7 +9,7 @@
         ws = new WebSocket("ws://" + document.domain + ":{{port}}/websocket");
         ws.onmessage = function (msg) {
             var message = JSON.parse(msg.data);
-            $("p#log").html(message.output );
+            $("div#output").html(message.output );
         };
     };
     $('input[name=text]').on('keyup', function(e){
@@ -41,7 +41,6 @@ textarea:focus, input:focus{
 </head>
 <body>
     <input type="text" name="text"  />
-    <p id="log"></p>
-    <p>--<br/>Websockets Echo Server using Gevent-websocket & Flask</p>
+    <div id="output"></div>
 </body>
 </html>
