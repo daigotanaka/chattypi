@@ -78,6 +78,7 @@ class Application(object):
         self.idle_duration = config.get("audio")["idle_duration"]
         self.take_order_duration = config.get("audio")["take_order_duration"]
         self.my_email = config.get("email")
+        self.screen_on = config.get("system")["screen"]
         self.flac_file = "/tmp/noise.flac"
         self.vol_samples = 5
         self.vol_total = 5
@@ -499,6 +500,8 @@ class Application(object):
         return libs.system(user=self.user, command=cmd)
 
     def update_screen(self, html=None):
+        if not self.screen_on:
+            return
         url = "http://0.0.0.0:8000/update/"
         user_agent = "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)"
         values = {
@@ -542,8 +545,11 @@ class Application(object):
 if __name__ == "__main__":
     app = Application()
 
-    process = Process(target=start_server, args=(None,))
-    process.start()
+    if app.screen_on:
+        process = Process(target=start_server, args=(None,))
+        process.start()
 
     app.run()
-    process.stop()
+
+    if app.screen_on:
+        process.stop()
