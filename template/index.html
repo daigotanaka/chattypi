@@ -5,14 +5,14 @@
 <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 <script>
     $(function() {
-    if ("WebSocket" in window) {
-        ws = new WebSocket("ws://" + document.domain + ":{{port}}/websocket");
+    if ('WebSocket' in window) {
+        ws = new WebSocket('ws://' + document.domain + ':{{port}}/websocket');
         ws.onmessage = function (msg) {
             var message = JSON.parse(msg.data);
-            if (message.output.substring(0, 4) == "http") {
-                window.open(message.output, "result");
+            if (message.output.substring(0, 4) == 'http') {
+                window.open(message.output, 'result', 'fullscreen=1,left=0');
             } else {
-                $("div#output").html(message.output );
+                $('div#output').html(message.output );
             }
         };
     };
