@@ -87,7 +87,10 @@ class WebServer(Flask):
         for socket in self.sockets:
             if not socket.socket:
                 erase_list.append(socket)
-            socket.send(json.dumps({"output": html}))
+            try:
+                socket.send(json.dumps({"output": html}))
+            except geventwebsocket.WebSocketError:
+                erase_list.append(socket)
         for socket in erase_list:
             self.sockets.remove(socket)
 

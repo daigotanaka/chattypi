@@ -37,5 +37,5 @@ def register(app):
 class ImageSearchPlugin(Plugin):
     def search(self, param, **kwargs):
         query = param
-        self.app.say("Searching the image of %s" % query)
+        self.app.say("Searching the image of %s" % query, nowait=True)
         self.app.update_screen(html="http://www.google.com/search?hl=en&site=imghp&tbm=isch&q=%s" % query)
