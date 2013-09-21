@@ -82,7 +82,7 @@ class Application(object):
         self.flac_file = "/tmp/noise.flac"
         self.vol_samples = 5
         self.vol_total = 5
-        self.vol_average = 1.0
+        self.vol_average = 0.5
         self.prev_idle_vol = 1.0
         self.sound_proc = None
         self.is_mic_down = False
