@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 <script>
-    var resultWindow = null;
     var forwardHistory = Array();
     var backHistory = Array();
     var currentPage = null;
@@ -14,33 +13,32 @@
         ws.onmessage = function (msg) {
             var message = JSON.parse(msg.data);
 
+            if (message.output.substring(0, 4) != 'http' &&
+                message.output != '<back>' &&
+                message.output != '<forward>') {
+                $('div#output').html(message.output );
+                return;
+            }
+
             if (message.output == '<back>') {
                 back = backHistory.pop();
                 if (back !== undefined) {
                     forwardHistory.push(currentPage);
                     currentPage = back;
-                    resultWindow.location.href = back;
                 }
             } else if (message.output == '<forward>') {
                 forward = forwardHistory.pop();
                 if (forward !== undefined) {
                     backHistory.push(currentPage);
                     currentPage = forward;
-                    resultWindow.location.href = forward;
                 }
             } else if (message.output.substring(0, 4) == 'http') {
                 backHistory.push(currentPage);
                 forwardHistory = Array()
                 currentPage = message.output;
-                if (resultWindow == null) {
-                    resultWindow = window.open(currentPage, 'chattypi', 'fullscreen=1,left=0', true);
-                } else {
-                    resultWindow.location.href = currentPage;
-                }
             }
-            else {
-                $('div#output').html(message.output );
-            }
+
+            window.open(currentPage, 'chattypi', 'fullscreen=1,left=0', true);
         };
     };
     $('input[name=text]').on('keyup', function(e){
