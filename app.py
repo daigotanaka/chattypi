@@ -110,6 +110,8 @@ class Application(object):
             "switch on": ("turn on", self.turn_on),
             "turn off": ("turn off", self.turn_off),
             "switch off": ("turn off", self.turn_off),
+            "previous page": ("screen back", self.screen_back),
+            "next page": ("screen forward", self.screen_forward)
         }
 
         for command in core_commands:
@@ -512,6 +514,12 @@ class Application(object):
             self.logger.info(err)
             return
         the_page = response.read()
+
+    def screen_back(self):
+        self.update_screen(html="<back>")
+
+    def screen_forward(self):
+        self.update_screen(html="<forward>")
 
     def add_contact(self):
         self.say("This feature is currently unsupported")

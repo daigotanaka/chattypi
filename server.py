@@ -93,7 +93,10 @@ class WebServer(Flask):
             except WebSocketError:
                 erase_list.append(socket)
         for socket in erase_list:
-            self.sockets.remove(socket)
+            try:
+                self.sockets.remove(socket)
+            except KeyError:
+                pass
 
 
 server = WebServer()
