@@ -49,6 +49,8 @@ class WolfRamAlphaPlugin(Plugin):
             return
         query = param
         self.app.say("Searching: " + query, nowait=True)
+        html = "http://www.wolframalpha.com/input/?i=" + query
+        self.app.update_screen(html=html)
         answer = self.wolframalpha.search(query)
         self.app.logger.debug("Answer: %s" % answer)
 
