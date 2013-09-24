@@ -32,7 +32,7 @@ def register(app):
     global maps_plugin
     maps_plugin = MapsPlugin(app)
     app.register_command(["maps", "show me the map", "show me the map of", "show me the map at"], "maps", maps_plugin.show_maps)
-    app.register_command(["directions", "directions to"], "maps directions", maps_plugin.show_direction)
+    app.register_command(["directions", "directions to", "show me the directions", "show me the directions to"], "maps directions", maps_plugin.show_direction)
 
 
 class MapsPlugin(Plugin):
