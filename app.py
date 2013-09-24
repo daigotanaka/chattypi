@@ -217,13 +217,14 @@ class Application(object):
         self.logger.info("%s: yes?" % self.nickname)
         self.play_sound("sound/yes.mp3")
 
-        self.take_order()
+        self.take_order(acknowledge=False)
 
-    def take_order(self):
-        text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
+    def take_order(self, acknowledge=True):
+        text = self.listen_once(duration=self.take_order_duration, acknowledge=acknowledge)
         if not text:
             self.logger.debug("?")
-            self.play_sound("sound/bloop_x.wav")
+            if acknowledge:
+                self.play_sound("sound/bloop_x.wav")
             return
 
         self.logger.debug("Excecuting order...")
@@ -293,10 +294,12 @@ class Application(object):
             self.logger.debug("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
             dispatcher.send(signal=sig, **kwargs)
-            return
-        message = "Did you say, %s?" % text
-        self.say(message)
-        self.take_order()
+            break
+        else:
+            message = "Did you say, %s?" % text
+            self.say(message)
+        if not self.exit_now:
+            self.take_order(acknowledge=False)
 
         return
 
