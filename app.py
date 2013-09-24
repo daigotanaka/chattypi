@@ -68,7 +68,6 @@ class Application(object):
         self.config = config
 
         self.greeted = False
-        self.sleep = False
         self.exist_now = False
         self.nickname = config.get("computer_nickname")
         self.user_nickname = config.get("user_nickname")
@@ -97,7 +96,6 @@ class Application(object):
         self.speech2text = Speech2Text(user=self.user, sample_rate=self.sample_rate)
 
         core_commands = {
-            "wake up": ("wake up", self.wakeup),
             "exit program": ("exit program", self.exit_program),
             "reboot": ("reboot", self.reboot),
             "shut down": ("shut down", self.shutdown),
@@ -216,12 +214,12 @@ class Application(object):
         if not self.is_cue(text):
             return
 
-        if self.sleep:
-            self.logger.debug("Zzz...")
+        self.logger.info("%s: yes?" % self.nickname)
+        self.play_sound("sound/yes.mp3")
 
-        else:
-            self.logger.info("%s: yes?" % self.nickname)
-            self.play_sound("sound/yes.mp3")
+        self.take_order()
+
+    def take_order(self):
         text = self.listen_once(duration=self.take_order_duration, acknowledge=True)
         if not text:
             self.logger.debug("?")
@@ -231,17 +229,11 @@ class Application(object):
         self.logger.debug("Excecuting order...")
         self.execute_order(text)
 
-        return
-
     def exit_program(self):
         self.logger.info("%s: Voice command off" % self.nickname)
         self.play_sound("sound/voice_command_off.mp3")
         self.clean_files()
         self.exit_now = True
-
-    def wakeup(self):
-        self.say("Good morning")
-        self.sleep = False
 
     def reboot(self):
         self.logger.info("%s: Rebooting..." % self.nickname)
@@ -304,15 +296,12 @@ class Application(object):
             return
         message = "Did you say, %s?" % text
         self.say(message)
+        self.take_order()
 
         return
 
         # TODO(daigo): Clean up the code below
-        if text.lower() in ["go to sleep", "sleep"]:
-            message = "Good night"
-            self.sleep = True
- 
-        elif text.lower() == "reset recording level":
+        if text.lower() == "reset recording level":
             self.min_volume = self.vol_average * 1.5
             message = "Set minimum voice level to %.1f" % self.min_volume
             config.get("audio")["min_volume"] = self.min_volume
@@ -558,4 +547,4 @@ if __name__ == "__main__":
     app.run()
 
     if app.screen_on:
-        process.stop()
+        process.terminate()
