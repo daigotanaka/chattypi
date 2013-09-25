@@ -25,9 +25,23 @@
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
-from flask import Flask, render_template, request
-import os
+from flask import current_app, Flask, jsonify, render_template, request
+
 import json
+import os
+import socket
+
+from libs.decorators import jsonp
+
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+try:
+    s.connect(("google.com", 0))
+except:
+    pass
+else:
+    myIP = s.getsockname()[0]
+
 
 class WebServer(Flask):
 
@@ -101,6 +115,12 @@ class WebServer(Flask):
 
 server = WebServer()
 flask = server.create_instance()
+
+
+@flask.route("/ping/")
+@jsonp
+def ping():
+    return jsonify(status="ok", app="chattypi", url="http://" + myIP + ":8000")
 
 
 @flask.route("/")
