@@ -73,6 +73,13 @@ class WebServer(Flask):
         return self.flask(environ, start_response)
  
     def handle_websocket(self, ws):
+        erase_list = []
+        for socket in self.sockets:
+            if not socket.socket:
+                erase_list.append(socket)
+        for socket in erase_list:
+            self.sockets.remove(socket)
+
         if not ws in self.sockets:
             if len(self.sockets) > 10:
                 self.exceeded_max_connection(ws)
