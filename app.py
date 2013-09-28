@@ -21,24 +21,26 @@
 # THE SOFTWARE.
 
 from config import config
-import logging
 from multiprocessing import Process
-import os
 from pydispatch import dispatcher
-import re
 from server import start_server
+from time import sleep
+
+import logging
+import os
+import Queue
+import re
 import socket
 import subprocess
-from time import sleep
 import urllib
 import urllib2
 
-
 from addressbook import AddressBook
-import libs
 from listener import Listener
-import plugins
 from speech2text import Speech2Text
+
+import libs
+import plugins
 
 
 class Application(object):
@@ -217,7 +219,7 @@ class Application(object):
         self.logger.info("%s: yes?" % self.nickname)
         self.play_sound("sound/yes.mp3")
 
-        self.take_order(acknowledge=False)
+        self.take_order(acknowledge=True)
 
     def take_order(self, acknowledge=True):
         text = self.listen_once(duration=self.take_order_duration, acknowledge=acknowledge)
@@ -378,7 +380,11 @@ class Application(object):
             return
 
         self.logger.info("%s: %s" % (self.nickname, text))
-        param = urllib.urlencode({"tl": "en", "q": text})
+        try:
+            param = urllib.urlencode({"tl": "en", "q": text})
+        except UnicodeEncodeError:
+            return
+
         url = "http://translate.google.com/translate_tts?" + param
         if not nowait:
             self.play_sound(url=url, nowait=nowait)
