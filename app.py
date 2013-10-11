@@ -553,7 +553,11 @@ if __name__ == "__main__":
         process = Process(target=start_server, args=(None,))
         process.start()
 
-    app.run()
+    try:
+        app.run()
+    except Exception, err:
+        app.logger.error(err)
+        raise
 
     if app.screen_on:
         process.terminate()
