@@ -28,7 +28,6 @@ from time import sleep
 
 import logging
 import os
-import Queue
 import re
 import socket
 import subprocess
@@ -36,6 +35,7 @@ import urllib
 import urllib2
 
 from addressbook import AddressBook
+from core import CoreCommands
 from listener import Listener
 from speech2text import Speech2Text
 
@@ -59,6 +59,8 @@ class Application(object):
             fh.setLevel(logging.INFO)
 
         self.logger.addHandler(fh)
+
+        self.core = CoreCommands(self)
 
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]
@@ -97,27 +99,7 @@ class Application(object):
         self.listener = Listener(user=self.user, sample_rate=self.sample_rate)
         self.speech2text = Speech2Text(user=self.user, sample_rate=self.sample_rate)
 
-        core_commands = {
-            "exit program": ("exit program", self.exit_program),
-            "reboot": ("reboot", self.reboot),
-            "shut down": ("shut down", self.shutdown),
-            "shutdown": ("shut down", self.shutdown),
-            "switch audio": ("switch audio", self.switch_audio),
-            "what is local ip": ("local ip", self.local_ip),
-            "status report": ("status report", self.status_report),
-            "status update": ("status report", self.status_report),
-            "turn on": ("turn on", self.turn_on),
-            "switch on": ("turn on", self.turn_on),
-            "turn off": ("turn off", self.turn_off),
-            "switch off": ("turn off", self.turn_off),
-            "previous page": ("screen back", self.screen_back),
-            "next page": ("screen forward", self.screen_forward)
-        }
-
-        for command in core_commands:
-            sig, func = core_commands[command]
-            self.register_command([command], sig, func)
-
+        self.core.register_commands()
         self.import_plugins()
 
     @property
@@ -152,7 +134,6 @@ class Application(object):
             dispatcher.connect(func, signal=signal, sender=dispatcher.Any)
             self.logger.debug("Registered '%s' command with '%s' singnal"
                 % (command, signal))
-
 
     def run(self, args=None):
         self.loop()
@@ -231,61 +212,6 @@ class Application(object):
 
         self.logger.debug("Excecuting order...")
         self.execute_order(text)
-
-    def exit_program(self):
-        self.logger.info("%s: Voice command off" % self.nickname)
-        self.play_sound("sound/voice_command_off.mp3")
-        self.clean_files()
-        self.exit_now = True
-
-    def reboot(self):
-        self.logger.info("%s: Rebooting..." % self.nickname)
-        self.play_sound("sound/rebooting.mp3")
-        self.clean_files()
-        os.system("sudo reboot")
- 
-    def shutdown(self):
-        self.logger.info("%s: Shutting down..." % self.nickname)
-        self.play_sound("sound/shutting_down.mp3")
-        self.clean_files()
-        os.system("sudo shutdown -h now")
-
-    def switch_audio(self):
-        config.get("audio")["out_device"] = 0 if config.get("audio")["out_device"] == 1 else 1
-        config.write()
-        self.say("Switched audio output hardware")
-
-    def local_ip(self):
-        self.say(self.get_ip())
-
-    def status_report(self):
-        self.say("Current noise level is %.1f" % self.vol_average
-            + ". Your voice is %.1f" % self.current_volume)
-
-    def turn_on(self, param):
-        message = "I don't know how to turn on %s" % param
-        if param.lower() == "vnc server":
-            self.system(os.path.join(self.usr_bin_path, "vncserver") + " :1")
-            message = "VNC server is on"
-        elif "debug mode" in param.lower() or "debugging mode" in param.lower():
-            if self.config.get("debug"):
-                message = "Debug mode is already on"
-            else:
-                self.config.set("debug", True)
-                message = "Turned on debug mode"
-        self.say(message)
-
-    def turn_off(self, param):
-        message = "I don't know how to turn off %s" % param
-        if "debug mode" in param.lower() or "debugging mode" in param.lower():
-            if not self.config.get("debug"):
-                message = "Debug mode is already off"
-            else:
-                self.config["debug"] = False
-                self.config.write()
-                message = "Turned off debug mode"
-        self.say(message)
-
 
     def execute_order(self, text):
         for command in self.command2signal:
@@ -512,39 +438,6 @@ class Application(object):
             self.logger.info(err)
             return
         the_page = response.read()
-
-    def screen_back(self):
-        self.update_screen(html="<back>")
-
-    def screen_forward(self):
-        self.update_screen(html="<forward>")
-
-    def add_contact(self):
-        self.say("This feature is currently unsupported")
-
-        """
-        self.say("What is the contact's nick name?")
-        nickname = self.record_content(duration=7.0)
-        if not nickname:
-            return
-        self.say("What is the number for " + nickname + "?")
-        number = self.listen_once(duration=10.0)
-        number = re.sub(r"\D", "", number)
-        self.logger.debug(number)
-        phone_validator = re.compile(r"^\d{10}$")
-        if phone_validator.match(number) is None:
-            self.logger.info("%s: Sorry, I could not catch that. Please try again." % self.nickname)
-            self.play_sound("sound/try_again.mp3")
-            number = self.listen_once(duration=10.0)
-            number = re.sub(r"\D", "", number)
-            self.logger.debug(number)
-            if number is None or phone_validator.match(number) is None:
-                self.logger.info("%s: Sorry." % self.nickname)
-                self.play_sound("sound/sorry.mp3")
-                return
-        self.addressbook.add(nickname, number)
-        self.say("The phone number " + " ".join(number) + " for " + nickname + " was added.")
-        """
 
 if __name__ == "__main__":
     app = Application()
