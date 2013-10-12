@@ -43,7 +43,9 @@ class CoreCommands(object):
             "turn off": ("turn off", self.turn_off),
             "switch off": ("turn off", self.turn_off),
             "previous page": ("screen back", self.screen_back),
-            "next page": ("screen forward", self.screen_forward)
+            "next page": ("screen forward", self.screen_forward),
+            "repeat": ("repeat command", self.repeat_command),
+            "repeat the last command": ("repeat command", self.repeat_command)
         }
 
         for command in core_commands:
@@ -109,3 +111,6 @@ class CoreCommands(object):
 
     def screen_forward(self):
         self.app.update_screen(html="<forward>")
+
+    def repeat_command(self):
+        self.app.execute_order(self.app.last_command)

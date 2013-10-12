@@ -218,6 +218,8 @@ class Application(object):
             if not self.is_command(text, command):
                 continue
             sig = self.command2signal[command]
+            if sig != "repeat command":
+                self.last_command = text
             param = self.get_param(text, command)
             self.logger.debug("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
