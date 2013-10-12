@@ -37,6 +37,7 @@ import urllib2
 from addressbook import AddressBook
 from core import CoreCommands
 from listener import Listener
+from models import connect_db, CommandNickname
 from speech2text import Speech2Text
 
 import libs
@@ -60,17 +61,8 @@ class Application(object):
 
         self.logger.addHandler(fh)
 
-        self.core = CoreCommands(self)
-
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]
-
-        # Voice command to event dispatch singnal table
-        # See register_command method
-        self.command2signal = {}
-
-        self.config = config
-
         self.greeted = False
         self.exist_now = False
         self.nickname = config.get("computer_nickname")
@@ -93,12 +85,17 @@ class Application(object):
 
         self.audio_in_device = str(config.get("audio")["in_device"])
 
+        connect_db()
+
         self.clean_files()
 
         self.addressbook = AddressBook(user=self.user, file=config.get("addressbook")["file"])
         self.listener = Listener(user=self.user, sample_rate=self.sample_rate)
         self.speech2text = Speech2Text(user=self.user, sample_rate=self.sample_rate)
 
+        # Voice command to event dispatch singnal table
+        self.command2signal = {}
+        self.core = CoreCommands(self)
         self.core.register_commands()
         self.import_plugins()
 
@@ -214,11 +211,14 @@ class Application(object):
         self.execute_order(text)
 
     def execute_order(self, text):
+        nickname = CommandNickname().select().where(CommandNickname.nickname==text.lower())
+        if nickname.count():
+            text = nickname[0].command
         for command in self.command2signal:
             if not self.is_command(text, command):
                 continue
             sig = self.command2signal[command]
-            if sig != "repeat command":
+            if not sig in ["repeat command", "nickname command"]:
                 self.last_command = text
             param = self.get_param(text, command)
             self.logger.debug("Dispatching signal: %s" % sig)

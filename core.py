@@ -22,6 +22,7 @@
 
 import os
 
+from models import CommandNickname
 
 class CoreCommands(object):
 
@@ -45,7 +46,9 @@ class CoreCommands(object):
             "previous page": ("screen back", self.screen_back),
             "next page": ("screen forward", self.screen_forward),
             "repeat": ("repeat command", self.repeat_command),
-            "repeat the last command": ("repeat command", self.repeat_command)
+            "repeat the last command": ("repeat command", self.repeat_command),
+            "nickname the last command as": ("nickname command", self.nickname_command),
+            "nickname the last command": ("nickname command", self.nickname_command)
         }
 
         for command in core_commands:
@@ -114,3 +117,22 @@ class CoreCommands(object):
 
     def repeat_command(self):
         self.app.execute_order(self.app.last_command)
+
+    def nickname_command(self, param):
+        if not param:
+            self.app.say("What nickname?")
+            param = self.app.record_content(duration=5.0)
+        nickname = param.strip().lower()
+        cn = CommandNickname.select().where(CommandNickname.nickname==nickname)
+        if cn.count() == 0:
+            CommandNickname.create(nickname=nickname, command=self.app.last_command)
+            self.app.say("Nickname is created for %s" % self.app.last_command)
+            return
+        self.app.say("The nickname %s is already taken." % nickname)
+        if not self.app.confirm("Do you want to replace?"):
+                self.app.say("Canceled")
+                return
+        cn[0].nickname = nickname
+        cn[0].command = self.app.last_command
+        cn[0].save()
+        self.app.say("The nick name is replaced with %s" % self.app.last_command)
