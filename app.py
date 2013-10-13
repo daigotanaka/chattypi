@@ -272,8 +272,7 @@ class Application(object):
 
     def clean_files(self):
         files = [
-            "/tmp/noise.flac",
-            "/tmp/noise.wav",
+            self.flac_file,
             "/tmp/stt.txt",
             "/tmp/volume.txt"
         ]
@@ -319,11 +318,21 @@ class Application(object):
             return
         return self.play_sound(url=url)
 
-    def get_volume(self, duration=1.0):
+    def is_loud(self, vol):
+        if self.min_volume < vol and (self.vol_average * 1.5 < vol):
+            return True
+        return False
+
+    def get_text_from_last_heard(self):
+        return self.speech2text.convert_flac_to_text(infile=self.flac_file).replace("\n", " ").strip(" ")
+
+    def record_once(self, duration=1.0):
         if os.path.exists(self.flac_file):
             os.remove(self.flac_file)
+        self.listener.record_flac(file=self.flac_file, hw=self.audio_in_device, duration=duration)
 
-        self.listener.record_flac(hw=self.audio_in_device, duration=duration)
+    def get_volume(self, duration=1.0):
+        self.record_once(duration=duration)
         vol = self.listener.get_volume(file=self.flac_file)
         if vol < 0:
             if self.is_mic_down == False:
@@ -335,19 +344,8 @@ class Application(object):
             self.is_mic_down = False
         return vol
 
-    def is_loud(self, vol):
-        if self.min_volume < vol and (self.vol_average * 1.5 < vol):
-            return True
-        return False
-
-    def get_text_from_last_heard(self):
-        return self.speech2text.convertFlacToText().replace("\n", " ").strip(" ")
-
     def listen_once(self, duration=3.0, acknowledge=False):
-        text = ""
-        if os.path.exists(self.flac_file):
-            os.remove(self.flac_file)
-        self.listener.record_flac(hw=self.audio_in_device, duration=duration)
+        self.record_once(duration=duration)
         vol = self.listener.get_volume(self.flac_file)
         self.current_volume = vol
 
