@@ -24,6 +24,7 @@ from config import config
 from multiprocessing import Process
 from pydispatch import dispatcher
 from server import start_server
+from threading import Thread
 from time import sleep
 
 import logging
@@ -74,7 +75,7 @@ class Application(object):
         self.take_order_duration = config.get("audio")["take_order_duration"]
         self.my_email = config.get("email")
         self.screen_on = config.get("system")["screen"]
-        self.flac_file = "/tmp/noise.flac"
+        self.flac_file = "/tmp/noise%d.flac"
         self.vol_samples = 5
         self.vol_total = 5
         self.vol_average = 0.5
@@ -138,8 +139,14 @@ class Application(object):
     def loop(self):
         self.exit_now = False
         self.listen_once(duration=self.idle_duration)
+        self.rotation = 0
         while not self.exit_now:
+           if not self.listener.keep_recording:
+               self.listener.keep_recording = True
+               self.listener_thread = Thread(target=self.listener.continuous_recording, kwargs={"file": self.flac_file, "duration": self.idle_duration})
+               self.listener_thread.start()
            self.checkin()
+           self.rotation = (self.rotation + 1) % 2
 
     def checkin(self):
         if self.vol_samples == 6:
@@ -168,8 +175,8 @@ class Application(object):
                 self.play_sound("sound/voice_command_ready.mp3")
                 self.greeted = True
 
-        vol = self.get_volume(duration=self.idle_duration)
-        self.logger.debug("vol=%.4f avg=%.2f" % (vol, self.vol_average))
+        vol = self.get_volume(rotation=self.rotation)
+        self.logger.debug("vol=%.4f avg=%.2f rotation=%d" % (vol, self.vol_average, self.rotation))
 
         if vol < self.min_volume:
             self.prev_idle_vol = vol
@@ -182,7 +189,7 @@ class Application(object):
         self.logger.debug("!")
 
         # If the mic was muted previously and turned on, prompt for command
-        text = self.get_text_from_last_heard() if self.prev_idle_vol > self.min_volume else self.nickname
+        text = self.get_text_from_last_heard(rotation=self.rotation) if self.prev_idle_vol > self.min_volume else self.nickname
         self.prev_idle_vol = vol
 
         if not text:
@@ -193,6 +200,9 @@ class Application(object):
 
         if not self.is_cue(text):
             return
+
+        self.listener.keep_recording = False
+        self.listener_thread.join()
 
         self.logger.info("%s: yes?" % self.nickname)
         self.play_sound("sound/yes.mp3")
@@ -323,17 +333,21 @@ class Application(object):
             return True
         return False
 
-    def get_text_from_last_heard(self):
-        return self.speech2text.convert_flac_to_text(infile=self.flac_file).replace("\n", " ").strip(" ")
+    def get_text_from_last_heard(self, rotation=0):
+        self.listener.playing = rotation
+        while self.listener.recording == self.listener.playing:
+            sleep(0.5)
+        text = self.speech2text.convert_flac_to_text(infile=self.flac_file % rotation).replace("\n", " ").strip(" ")
+        self.listener.playing = None
+        return text
 
     def record_once(self, duration=1.0):
-        if os.path.exists(self.flac_file):
-            os.remove(self.flac_file)
-        self.listener.record_flac(file=self.flac_file, hw=self.audio_in_device, duration=duration)
+        if os.path.exists(self.flac_file % 0):
+            os.remove(self.flac_file % 0)
+        self.listener.record_flac(file=self.flac_file % 0, hw=self.audio_in_device, duration=duration)
 
-    def get_volume(self, duration=1.0):
-        self.record_once(duration=duration)
-        vol = self.listener.get_volume(file=self.flac_file)
+    def get_volume(self, rotation=0):
+        vol = self.listener.get_volume(file=self.flac_file, rotation=rotation)
         if vol < 0:
             if self.is_mic_down == False:
                 self.say("Microphone is busy or down")
@@ -346,7 +360,7 @@ class Application(object):
 
     def listen_once(self, duration=3.0, acknowledge=False):
         self.record_once(duration=duration)
-        vol = self.listener.get_volume(self.flac_file)
+        vol = self.listener.get_volume(file=self.flac_file, rotation=0)
         self.current_volume = vol
 
         if not self.is_loud(vol):

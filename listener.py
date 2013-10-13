@@ -20,6 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+from time import sleep
+
 import os
 
 import libs
@@ -29,9 +31,38 @@ class Listener(object):
     def __init__(self, user="", sample_rate=16000):
         self.sample_rate = sample_rate
         self.user = user
+        self.keep_recording = False
+        self.recording = None
+        self.playing = None
 
     def system(self, cmd):
         return libs.system(command=cmd, user=self.user)
+
+    def continuous_recording(self, file="/tmp/noise%d.flac", hw="plughw:1,0", duration=5, nullout=False):
+        while self.keep_recording:
+            if self.recording is not None:
+                raise Exception("Another thread is recording audio.")
+
+            self.recording = (self.playing + 1) % 2 if self.playing is not None else 0
+            if os.path.exists(file % self.recording):
+                os.remove(file % self.recording)
+            self.record_flac(file=file % self.recording, hw=hw, duration=duration, nullout=nullout)
+            self.recording = None
+
+    def get_volume(self, file="/tmp/noise%d.flac", rotation=0):
+        if self.playing is not None:
+            raise Exception("Another thread is playing audio.")
+        self.playing = rotation
+        while self.recording == self.playing:
+            sleep(0.5)
+        file = file % self.playing
+        cmd = "/usr/bin/sox " + file + " -n stats -s 16 2>&1 | /usr/bin/awk '/^Max\\ level/ {print $3}' > /tmp/volume.txt"
+        self.system(cmd)
+        f = open("/tmp/volume.txt")
+        output = f.read()
+        vol = float(output) if output else -1.0
+        self.playing = None
+        return vol
 
     def record_flac(self, file="/tmp/noise.flac", hw="plughw:1,0", duration=5, nullout=False):
         if os.path.exists(file):
@@ -66,14 +97,6 @@ class Listener(object):
         if nullout:
             cmd += " 1>>/tmp/voice.log 2>>/tmp/voice.log"
         self.system(cmd)
-
-    def get_volume(self, file="/tmp/noise.flac"):
-        cmd = "/usr/bin/sox " + file + " -n stats -s 16 2>&1 | /usr/bin/awk '/^Max\\ level/ {print $3}' > /tmp/volume.txt"
-        self.system(cmd)
-        f = open("/tmp/volume.txt")
-        output = f.read()
-        vol = float(output) if output else -1.0
-        return vol
 
 if __name__ == "__main__":
     if os.path.exists("/tmp/noise.flac"):
