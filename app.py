@@ -141,12 +141,12 @@ class Application(object):
         self.listen_once(duration=self.idle_duration)
         self.rotation = 0
         while not self.exit_now:
-           if not self.listener.keep_recording:
-               self.listener.keep_recording = True
-               self.listener_thread = Thread(target=self.listener.continuous_recording, kwargs={"file": self.flac_file, "duration": self.idle_duration})
-               self.listener_thread.start()
-           self.checkin()
-           self.rotation = (self.rotation + 1) % 2
+            if not self.listener.keep_recording:
+                self.listener.keep_recording = True
+                self.listener_thread = Thread(target=self.listener.continuous_recording, kwargs={"file": self.flac_file, "duration": self.idle_duration})
+                self.listener_thread.start()
+            self.checkin()
+            self.rotation = (self.rotation + 1) % 2
 
     def checkin(self):
         if self.vol_samples == 6:
