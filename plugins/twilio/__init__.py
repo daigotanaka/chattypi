@@ -56,7 +56,7 @@ class TwilioPlugin(Plugin):
         body = self.app.record_content(duration=7.0)
         if not body:
             return
-        to_verbal = " ".join(to_)
+        to_verbal = to_[0:3] + "-" + to_[3:6] + "-" + to_[6:]
         name = self.app.addressbook.get_fullname(nickname)
         self.app.say("Your said, " + body)
         if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
