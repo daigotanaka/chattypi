@@ -1,11 +1,13 @@
 argparse==1.2.1
 configobj==4.7.2
 flask==0.10.1
-gevent==0.13.8
-gevent-websocket==0.3.6
-greenlet==0.4.1
+
+# Only if you use server
+# gevent==0.13.8
+# gevent-websocket==0.3.6
+# greenlet==0.4.1
+
 httplib2==0.8
-numpy==1.6.2
 oauth2==1.5.211
 peewee==2.1.4
 py-pretty==1
