@@ -23,7 +23,6 @@
 from config import config
 from multiprocessing import Process
 from pydispatch import dispatcher
-from server import start_server
 from threading import Thread
 from time import sleep
 
@@ -457,6 +456,7 @@ if __name__ == "__main__":
     app = Application()
 
     if app.screen_on:
+        from server import start_server
         process = Process(target=start_server, args=(None,))
         process.start()
 

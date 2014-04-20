@@ -64,7 +64,7 @@ class Listener(object):
         self.playing = None
         return vol
 
-    def record_flac(self, file="/tmp/noise.flac", hw="plughw:1,0", duration=5, nullout=False):
+    def record_flac(self, file="/tmp/noise0.flac", hw="plughw:1,0", duration=5, nullout=False):
         if os.path.exists(file):
             raise Exception("File already exists!")
 
@@ -99,8 +99,8 @@ class Listener(object):
         self.system(cmd)
 
 if __name__ == "__main__":
-    if os.path.exists("/tmp/noise.flac"):
-        os.remove("/tmp/noise.flac")
+    if os.path.exists("/tmp/noise0.flac"):
+        os.remove("/tmp/noise0.flac")
 
     listener = Listener()
     listener.record_flac()

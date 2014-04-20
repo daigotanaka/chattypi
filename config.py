@@ -34,25 +34,25 @@ username = string(max=32, default="pi")
 email = string(max=256)
 
 [system]
-logfile = string(max=1024, default="/home/pi/chattypi/chattypi.log")
+logfile = string(max=1024, default="log/chattypi.log")
 usr_bin = string(max=1024, default="/usr/bin")
 default_path = string(max=1024, default="/home/pi/chattypi")
 db_file = string(max=1024, default="chattypi.db")
 inet_check_max_attempts = integer(1, 10, default=3)
 cue = string(max=1024, default="hey ok okay listen")
-screen = boolean(default=True)
+screen = boolean(default=False)
 
 [addressbook]
-file = string(max=1024, default="/home/pi/chattypi/data/addressbook.csv")
+file = string(max=1024, default="data/addressbook.csv")
 
 [audio]
 has_pulse = boolean(default=False)
 out_device = integer(0, 1, default=0)
 in_device = string(max=256, default="plughw:1,0")
-sample_rate = integer(16000, 48000, default=8000)
-min_volume = float(0.0, 10.0, default=0.1)
-idle_duration = float(1.0, 5.0, default=2.0)
-take_order_duration = float(2.0, 10.0, default=6.0)
+sample_rate = integer(16000, 48000, default=48000)
+min_volume = float(0.0, 10.0, default=0.005)
+idle_duration = float(1.0, 5.0, default=1.5)
+take_order_duration = float(2.0, 10.0, default=5.0)
 """
 
 configspec = CONFIGSPEC.split("\n")
