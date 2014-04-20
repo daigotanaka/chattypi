@@ -1,13 +1,25 @@
-chattypi
-========
+# chattypi
 
 Voice command on Raspberry Pi
 
-To run, create config.ini according to the specification from config.py, and "python app.py"
+## Requirements
 
-+ Requirements
+### Install system level requirements
 
-See requirements.txt
+    sudo apt-get install libavcodec-extra-53
+    sudo apt-get install libav-tools
+    sudo apt-get sox
 
-- libevent-dev (for gevent)
+### Install python requirements
+
+    source cp-venv/bin/activate
+    pip install -r requirements.txt
+
+### For using websocket
+
+    libevent-dev (for gevent)
+
+## Running chattypi
+
+    python app.py
 
