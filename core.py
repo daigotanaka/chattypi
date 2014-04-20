@@ -48,7 +48,8 @@ class CoreCommands(object):
             "repeat": ("repeat command", self.repeat_command),
             "repeat the last command": ("repeat command", self.repeat_command),
             "nickname the last command as": ("nickname command", self.nickname_command),
-            "nickname the last command": ("nickname command", self.nickname_command)
+            "nickname the last command": ("nickname command", self.nickname_command),
+            "where am i": ("current address", self.current_address)
         }
 
         for command in core_commands:
@@ -136,3 +137,6 @@ class CoreCommands(object):
         cn[0].command = self.app.last_command
         cn[0].save()
         self.app.say("The nick name is replaced with %s" % self.app.last_command)
+
+    def current_address(self):
+        self.app.say("You are near %s" % self.app.get_current_address()["formatted_address"])

@@ -27,7 +27,6 @@ import wolframalpha
 from plugins import Plugin
 from plugins.wolframalpha.config import config
 
-
 def register(app):
     if not config.get("active"):
         return
@@ -48,8 +47,14 @@ class WolfRamAlphaPlugin(Plugin):
         if not param:
             return
         query = param
+
+        if " here" in query:
+            query = query.replace(" here", " at %s" % self.app.get_current_address()["formatted_address"])
+
         self.app.say("Searching: " + query, nowait=True)
+
         html = "http://www.wolframalpha.com/input/?i=" + query
+
         self.app.update_screen(html=html)
         answer = self.wolframalpha.search(query)
         self.app.logger.debug("Answer: %s" % answer)
