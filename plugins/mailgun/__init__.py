@@ -29,7 +29,7 @@ from mailgun import Mailgun
 
 
 def register(app):
-    if not config.get("active"):
+    if not app.config.get("mailgun")["active"]:
         return
     global mailgun_plugin
     mailgun_plugin = MailgunPlugin(app)
@@ -40,12 +40,12 @@ def register(app):
 class MailgunPlugin(Plugin):
     def __init__(self, app):
         self.mailgun = Mailgun(
-            api_key=config.get("api_key"),
-            mailgun_domain=config.get("mailgun_domain"))
+            api_key=app.config.get("mailgun")["api_key"],
+            mailgun_domain=app.config.get("mailgun")["mailgun_domain"])
         super(MailgunPlugin, self).__init__(app)
 
         ip = self.app.get_ip()
-        if ip and config.get("send_ip_on_start"):
+        if ip and app.config.get("mailgun")["send_ip_on_start"]:
             self.mailgun.send_email(to_=self.app.my_email, from_=self.app.my_email, subject="IP address", body="My IP address is %s" % ip)
 
     def send(self, param, **kwargs):
@@ -84,5 +84,5 @@ class MailgunPlugin(Plugin):
 
     def send_log(self, param):
         with File(self.app.config.get("system")["logfile"]) as f:
-            body = f.tail(config.get("email_log_lines"))
+            body = f.tail(app.config.get("mailgun")["email_log_lines"])
         self.send(param, body=body, subject="Log from %s" % self.app.nickname)

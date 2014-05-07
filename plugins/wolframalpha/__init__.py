@@ -29,7 +29,7 @@ from plugins.wolframalpha.config import config
 
 
 def register(app):
-    if not config.get("active"):
+    if not app.config.get("wolframalpha")["active"]:
         return
     global wra_plugin
     wra_plugin = WolfRamAlphaPlugin(app)
@@ -39,7 +39,7 @@ def register(app):
 
 class WolfRamAlphaPlugin(Plugin):
     def __init__(self, app):
-        self.wolframalpha = WolfRamAlphaSearch(app_id=config.get("app_id"))
+        self.wolframalpha = WolfRamAlphaSearch(app_id=app.config.get("wolframalpha")["app_id"])
         super(WolfRamAlphaPlugin, self).__init__(app)
 
     def search(self, param):

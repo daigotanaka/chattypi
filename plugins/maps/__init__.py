@@ -27,7 +27,7 @@ from plugins.maps.config import config
 
 
 def register(app):
-    if not config.get("active"):
+    if not app.config.get("maps")["active"]:
         return
     global maps_plugin
     maps_plugin = MapsPlugin(app)

@@ -28,7 +28,7 @@ from plugins import Plugin
 
 
 def register(app):
-    if not config.get("active"):
+    if not app.config.get("twilio")["active"]:
         return
     global twilio_plugin
     twilio_plugin = TwilioPlugin(app)
@@ -38,10 +38,10 @@ def register(app):
 class TwilioPlugin(Plugin):
     def __init__(self, app):
         self.twilio = Twilio(
-            account_sid=config.get("account_sid"),
-            auth_token=config.get("auth_token")
+            account_sid=app.config.get("twilio")["account_sid"],
+            auth_token=app.config.get("twilio")["auth_token"],
         )
-        self.my_phone = config.get("my_phone")
+        self.my_phone = app.config.get("twilio")["my_phone"]
         super(TwilioPlugin, self).__init__(app)
 
     def send_sms(self, param):
