@@ -54,12 +54,12 @@ class GoogleTalkPlugin(Plugin):
         jid = xmpp.JID(user)
         self.connection = xmpp.Client(server) 
         self.connection.connect(server=("talk.google.com", 5223))
-        result = connection.auth(jid.getNode(), password, "LFY-client") 
+        result = self.connection.auth(jid.getNode(), password, "LFY-client") 
         self.connection.RegisterHandler("message", self.message_handler) 
          
         self.connection.sendInitPresence() 
          
-        while not self.app.exit_now and connection.Process(1):
+        while not self.app.exit_now and self.connection.Process(1):
             pass
         self.app.logger.debug("Exiting Google Talk plugin")
 
@@ -80,10 +80,10 @@ class GoogleTalkPlugin(Plugin):
     def send_message(self, contact_jid, message):
         self.connection.send(xmpp.Message(contact_jid, message))
 
-    def respond(self, message):
+    def respond(self, param, **kwargs):
         if not self.last_from:
             return
-        self.send_message(self.last_from, message)
+        self.send_message(self.last_from, param)
 
  
 if __name__ == "__main__":
