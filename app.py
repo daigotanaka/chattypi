@@ -99,6 +99,12 @@ class Application(object):
         self.core.register_commands()
         self.import_plugins()
 
+        self.sphinx = subprocess.Popen(
+            ["/home/pi/chattypi/bin/ps"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+
     @property
     def audio_out_device(self):
         out_device = str(config.get("audio")["out_device"])
@@ -137,8 +143,14 @@ class Application(object):
 
     def loop(self):
         self.exit_now = False
-        self.listen_once(duration=self.idle_duration)
         self.rotation = 0
+        while not self.exit_now:
+            message = self.listen_once()
+            if message:
+                self.execute_order(message)
+        self.sphinx.terminate()
+        return
+
         while not self.exit_now:
             if not self.listener.keep_recording:
                 self.listener.keep_recording = True
@@ -237,6 +249,9 @@ class Application(object):
         else:
             message = "Did you say, %s?" % text
             self.say(message)
+
+        return
+
         if not self.exit_now:
             self.take_order(acknowledge=False)
 
@@ -358,6 +373,15 @@ class Application(object):
         return vol
 
     def listen_once(self, duration=3.0, acknowledge=False):
+        message = None
+        while not message:
+            output = self.sphinx.stdout.readline()
+            m = re.search(r"\d{9}: .*", output)
+            if m:
+                code = m.group(0)[0:9]
+                message = m.group(0)[11:].strip(" ")
+        return message.lower().strip(" ")
+
         self.record_once(duration=duration)
         vol = self.listener.get_volume(file=self.flac_file, rotation=0)
         self.current_volume = vol

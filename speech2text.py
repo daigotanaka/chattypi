@@ -34,13 +34,13 @@ class Speech2Text(object):
         return libs.system(command=cmd, user=self.user)
 
 
-    def convert_to_flac(self, infile="/tmp/noise.wav", outfile="/tmp/noise.flac"):
+    def convert_to_flac(self, infile="/tmp/noise.wav", outfile="/tmp/noise0.flac"):
         cmd = "/usr/bin/avconv "
         cmd += "-loglevel 0 "
         cmd += ("-i " + infile + " -ar " + str(self.sample_rate) + " " + outfile)
         self.system(cmd)
 
-    def convert_flac_to_text(self, infile="/tmp/noise.flac", outfile="/tmp/stt.txt"):
+    def convert_flac_to_text(self, infile="/tmp/noise0.flac", outfile="/tmp/stt.txt"):
         url = "http://www.google.com/speech-api/v1/recognize?lang=en-us&client=chromium"
         cmd = "/usr/bin/wget -q -U \"Mozilla/5.0\" --post-file " + infile + " --header \"Content-Type: audio/x-flac; rate=" + str(self.sample_rate) + "\" -O - \"" + url +  "\"| /usr/bin/cut -d\\\" -f12  > " + outfile
 

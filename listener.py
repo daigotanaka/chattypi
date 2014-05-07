@@ -28,7 +28,7 @@ import libs
 
 class Listener(object):
 
-    def __init__(self, user="", sample_rate=16000):
+    def __init__(self, user="", sample_rate=48000):
         self.sample_rate = sample_rate
         self.user = user
         self.keep_recording = False
