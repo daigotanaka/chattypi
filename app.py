@@ -148,7 +148,8 @@ class Application(object):
             message = self.listen_once()
             if message:
                 self.execute_order(message)
-        self.sphinx.terminate()
+        self.sphinx.kill()
+        self.logger.debug("Terminated Sphinx")
         return
 
         while not self.exit_now:
@@ -233,8 +234,11 @@ class Application(object):
 
     def execute_order(self, text):
         nickname = CommandNickname().select().where(CommandNickname.nickname==text.lower())
-        if nickname.count():
+        if nickname and nickname.count():
             text = nickname[0].command
+        self.do_execute_order(text)
+
+    def do_execute_order(self, text):
         for command in self.command2signal:
             if not self.is_command(text, command):
                 continue
@@ -374,14 +378,18 @@ class Application(object):
 
     def listen_once(self, duration=3.0, acknowledge=False):
         message = None
-        while not message:
+        while not self.exit_now and not message:
             output = self.sphinx.stdout.readline()
             m = re.search(r"\d{9}: .*", output)
             if m:
                 code = m.group(0)[0:9]
                 message = m.group(0)[11:].strip(" ")
-        return message.lower().strip(" ")
+        if message:
+            return message.lower().strip(" ")
+        return None
 
+        ####################################
+        # Old code to rely on Google Service
         self.record_once(duration=duration)
         vol = self.listener.get_volume(file=self.flac_file, rotation=0)
         self.current_volume = vol
