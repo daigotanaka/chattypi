@@ -146,6 +146,9 @@ class Application(object):
         self.rotation = 0
         while not self.exit_now:
             message = self.listen_once()
+            if self.nickname != message[0:len(self.nickname)]:
+                continue
+            message =  message[len(self.nickname):].strip()
             if message:
                 self.execute_order(message)
         self.sphinx.kill()
@@ -380,12 +383,16 @@ class Application(object):
         message = None
         while not self.exit_now and not message:
             output = self.sphinx.stdout.readline()
+            if "READY" in output and not self.greeted:
+                self.greeted = True
+                self.play_sound("sound/voice_command_ready.mp3")
+
             m = re.search(r"\d{9}: .*", output)
             if m:
                 code = m.group(0)[0:9]
-                message = m.group(0)[11:].strip(" ")
+                message = m.group(0)[11:]
         if message:
-            return message.lower().strip(" ")
+            return message.lower().strip()
         return None
 
         ####################################
