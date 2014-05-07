@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,8 +21,36 @@
 # THE SOFTWARE.
 
 from configobj import ConfigObj
-import os
 from validate import Validator
+
+import os
+
+import libs
+
+
+def import_config_spec():
+    config_specs = []
+    path, file = os.path.split(os.path.realpath(__file__))
+    path = os.path.join(path, "plugins")
+    for plugin in os.listdir(path):
+        if plugin == "__init__.py":
+            continue
+        if (plugin != "__init__.py"
+            and os.path.isdir(os.path.join(path, plugin))
+            and os.path.exists(
+                os.path.join(path, plugin, "__init__.py")
+                )
+            ):
+            module = libs.dynamic_import("plugins." + plugin)
+            if not hasattr(module, "config"):
+                continue
+            config_module = libs.dynamic_import("plugins." + plugin + ".config")
+            if type(config_module.configspec) != ConfigObj:
+                continue
+            config_spec = config_module.configspec.write()
+            config_spec.insert(1, "[" + module.__name__[len("plugin.") + 1:] + "]")
+            config_specs.extend(config_spec)
+    return config_specs
 
 
 CONFIGSPEC = """
@@ -56,6 +84,7 @@ take_order_duration = float(2.0, 10.0, default=5.0)
 """
 
 configspec = CONFIGSPEC.split("\n")
+configspec.extend(import_config_spec())
 configfilename = "config.ini"
 configdir = os.path.dirname(__file__)
 config_infile = os.path.join(configdir, configfilename)

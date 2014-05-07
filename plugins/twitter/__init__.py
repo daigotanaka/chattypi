@@ -34,7 +34,7 @@ from plugins.twitter.config import config
 
 
 def register(app):
-    if not config.get("active"):
+    if not app.config.get("active"):
         return
     global twitter_plugin
     twitter_plugin = TwitterPlugin(app)
@@ -44,10 +44,10 @@ def register(app):
 class TwitterPlugin(Plugin):
     def __init__(self, app):
         self.twitter = Twitter(
-            consumer_key=config.get("consumer_key"),
-            consumer_secret=config.get("consumer_secret"),
-            access_key=config.get("access_key"),
-            access_secret=config.get("access_secret")
+            consumer_key=app.config.get("twitter")["consumer_key"],
+            consumer_secret=app.config.get("twitter")["consumer_secret"],
+            access_key=app.config.get("twitter")["access_key"],
+            access_secret=app.config.get("twitter")["access_secret"]
         )
         super(TwitterPlugin, self).__init__(app)
 
