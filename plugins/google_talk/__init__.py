@@ -84,7 +84,7 @@ class GoogleTalkPlugin(Plugin):
                 text = message
             self.app.say(text)
         elif self.last_nickname != nickname:
-            self.app.say(nickname + " sent a message")
+            self.app.say(nickname + " is sending a message")
         self.last_from = from_
         self.last_nickname = nickname
         self.add_corpus(message)
@@ -92,7 +92,7 @@ class GoogleTalkPlugin(Plugin):
     def add_corpus(self, text):
         if not text:
             return
-        text  = re.sub(r"[^\w]", " ", text)
+        text  = re.sub(r"[^\w]", " ", text).strip()
         with open(self.app.config.get("sphinx")["corpus_file"], "a") as f:
             f.write(text + "\n")
 
