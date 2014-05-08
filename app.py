@@ -21,6 +21,7 @@
 # THE SOFTWARE.
 
 from config import config
+from gps import gps, WATCH_ENABLE
 from multiprocessing import Process
 from pydispatch import dispatcher
 from threading import Thread
@@ -29,6 +30,8 @@ from time import sleep
 import logging
 import os
 import re
+import requests
+import simplejson
 import socket
 import subprocess
 import urllib
@@ -43,6 +46,7 @@ from speech2text import Speech2Text
 import libs
 import plugins
 # import update_corpus
+
 
 class Application(object):
 
@@ -112,6 +116,9 @@ class Application(object):
         corpus_file = os.path.join(self.data_path, "command_corpus.txt")
         with open(corpus_file, "w") as f:
             f.write(all_commands)
+
+        # GPS
+        self.gps = gps(mode=WATCH_ENABLE)
 
     @property
     def audio_out_device(self):
@@ -366,6 +373,7 @@ class Application(object):
     def get_text_from_last_heard(self, rotation=0):
         self.listener.playing = rotation
         while self.listener.recording == self.listener.playing:
+            print "waiting...%d" % rotation
             sleep(0.5)
         text = self.speech2text.convert_flac_to_text(infile=self.flac_file % rotation).replace("\n", " ").strip(" ")
         self.listener.playing = None
@@ -500,6 +508,22 @@ class Application(object):
             self.logger.info(err)
             return
         the_page = response.read()
+
+    def get_lat_long(self):
+        for i in range(0, 10):
+            value = self.gps.next()
+            if value and hasattr(value, "lat"):
+                break
+        else:
+            return None, None
+        return value.lat, value.lon
+
+    def get_current_address(self):
+        lat, lng = self.get_lat_long()
+        response = requests.get("http://maps.googleapis.com/maps/api/geocode/json?latlng=%s,%s&sensor=false" % (lat, lng))
+        address = simplejson.loads(response.content)["results"]
+        return address[0]
+
 
 if __name__ == "__main__":
     app = Application()

@@ -41,6 +41,11 @@ class MapsPlugin(Plugin):
         if not param:
             self.app.say("Maps of where?")
             param = self.app.record_content(duration=7.0)
+
+        for key in ["here", "the current location", "current location"]:
+            if key in param:
+                param = param.replace(key, self.app.get_current_address()["formatted_address"])
+                break
  
         self.app.say("Showing the map at %s" % param, nowait=True)
         html = "http://maps.google.com?q=%s" % param
@@ -52,5 +57,7 @@ class MapsPlugin(Plugin):
             param = self.app.record_content(duration=7.0)
  
         self.app.say("Showing the directions to %s" % param, nowait=True)
-        html = "http://maps.google.com?saddr=current location&daddr=%s" % param
+
+        lat, lng = self.app.get_lat_long()
+        html = "http://maps.google.com?saddr=%s,%s&daddr=%s" % (lat, lng, param)
         self.app.update_screen(html=html)

@@ -89,6 +89,7 @@ class TwitterPlugin(Plugin):
             self.app.say(text)
             self.app.say(tweeted_at_pretty)
 
+
 class Twitter(object):
 
     def __init__(self, consumer_key, consumer_secret, access_key, access_secret):
@@ -111,6 +112,8 @@ class Twitter(object):
             method="POST",
             body=urllib.urlencode({"status": status, "wrap_links": True})
         )
+
+        print response
 
     def get_tweets(self, username, count=5, exclude_replies=True):
         if not username:
