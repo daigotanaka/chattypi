@@ -119,6 +119,11 @@ class Application(object):
     @property
     def sphinx(self):
         if self._sphinx is None or self._sphinx.poll() is not None:
+            # Make sure mic is working and unmuted when starting sphinx
+            vol = 0
+            while vol < self.min_volume:
+                self.record_once()
+                vol = self.get_volume()
             self.logger.debug("Restarting sphinx")
             self._sphinx = subprocess.Popen(
                 ["/home/pi/chattypi/bin/ps"],
@@ -168,10 +173,6 @@ class Application(object):
             f.write(text + "\n")
 
     def run(self, args=None):
-        vol = 0
-        while vol < self.min_volume:
-            self.record_once()
-            vol = self.get_volume()
         self.loop()
 
     def loop(self):
@@ -183,6 +184,7 @@ class Application(object):
             if head == -1:
                 self.logger.debug(message)
                 continue
+            self.logger.info("%s: %s" % (self.user_nickname, message))
             message = message[head + len(self.nickname):].strip()
             if message:
                 self.execute_order(message)

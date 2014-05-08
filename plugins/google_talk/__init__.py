@@ -78,7 +78,7 @@ class GoogleTalkPlugin(Plugin):
         message = message.encode('utf-8').lower().strip()
         self.current_connection = connect_object
         if self.app.nickname + ":" == message[0:len(self.app.nickname) + 1]:
-            message =  message[len(self.app.nickname) + 1:]
+            message =  message[len(self.app.nickname) + 1:].strip()
             self.app.do_execute_order(message)
         else:
             if self.last_nickname != nickname:
