@@ -29,6 +29,9 @@ CONFIGSPEC = """
 active = boolean(default=True)
 email = string(max=256)
 password = string(max=256)
+server = string(max=256, default="talk.google.com")
+domain = string(max=256, default="gmail.com")
+port = integer(default=5223)
 """
 
 configspec = CONFIGSPEC.split("\n")

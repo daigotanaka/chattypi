@@ -42,7 +42,7 @@ from speech2text import Speech2Text
 
 import libs
 import plugins
-
+# import update_corpus
 
 class Application(object):
 
@@ -63,6 +63,7 @@ class Application(object):
 
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]
+        self.data_path = os.path.join(self.default_path, config.get("system")["data_dir"])
         self.greeted = False
         self.exist_now = False
         self.nickname = config.get("computer_nickname")
@@ -104,6 +105,13 @@ class Application(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             shell=True)
+
+        all_commands = ""
+        for key in self.command2signal.keys():
+            all_commands += self.nickname + " " + key + "\n"
+        corpus_file = os.path.join(self.data_path, "command_corpus.txt")
+        with open(corpus_file, "w") as f:
+            f.write(all_commands)
 
     @property
     def audio_out_device(self):
@@ -147,6 +155,7 @@ class Application(object):
         while not self.exit_now:
             message = self.listen_once()
             if self.nickname != message[0:len(self.nickname)]:
+                print message
                 continue
             message =  message[len(self.nickname):].strip()
             if message:
@@ -392,6 +401,7 @@ class Application(object):
                 code = m.group(0)[0:9]
                 message = m.group(0)[11:]
         if message:
+            message  = re.sub(r"[^\w]", " ", message)
             return message.lower().strip()
         return None
 

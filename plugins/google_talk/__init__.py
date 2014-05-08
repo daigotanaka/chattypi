@@ -21,6 +21,8 @@
 # THE SOFTWARE.
 
 from threading import Thread
+
+import re
 import xmpp
 
 from plugins import Plugin
@@ -49,33 +51,48 @@ class GoogleTalkPlugin(Plugin):
         /* ]]> */
         </script>""" % self.app.config.get("google_talk")["email"]
         password = self.app.config.get("google_talk")["password"]
-        server="gmail.com"
         
         jid = xmpp.JID(user)
-        self.connection = xmpp.Client(server) 
-        self.connection.connect(server=("talk.google.com", 5223))
+        domain = self.app.config.get("google_talk")["domain"]
+        server = self.app.config.get("google_talk")["server"]
+        port = self.app.config.get("google_talk")["port"]
+        self.connection = xmpp.Client(domain) 
+        self.connection.connect(server=(server, port))
         result = self.connection.auth(jid.getNode(), password, "LFY-client") 
         self.connection.RegisterHandler("message", self.message_handler) 
-         
+
         self.connection.sendInitPresence() 
-         
+
         while not self.app.exit_now and self.connection.Process(1):
             pass
         self.app.logger.debug("Exiting Google Talk plugin")
 
     def message_handler(self, connect_object, message_node):
-        self.last_from = message_node.getFrom()
-        message = message_node.getBody()
+        from_ = message_node.getFrom()
+        message = message_node.getBody() or message_node.getSubject()
         self.current_connection = connect_object
-        if not message:
-            return
-        if self.app.nickname + ":" == str(message).strip()[0:len(self.app.nickname) + 1]:
-            text =  message.strip().lower()[len(self.app.nickname) + 1:]
-            self.app.do_execute_order(text)
-            return
-        nickname = str(self.last_from)
+        nickname = str(from_)
         nickname = nickname[0:nickname.find("@")]
-        self.app.say(nickname + " says: " + message)
+        if self.app.nickname + ":" == str(message).strip()[0:len(self.app.nickname) + 1]:
+            message =  message.strip().lower()[len(self.app.nickname) + 1:]
+            self.app.do_execute_order(message)
+        elif message:
+            if self.last_from != from_:
+                text = nickname + " says: " + message
+            else:
+                text = message
+            self.app.say(text)
+        elif self.last_from != from_:
+            self.app.say(nickname + " sent a message")
+        self.last_from = from_
+        self.add_corpus(message)
+
+    def add_corpus(self, text):
+        if not text:
+            return
+        text  = re.sub(r"[^\w]", " ", text)
+        with open(self.app.config.get("sphinx")["corpus_file"], "a") as f:
+            f.write(text + "\n")
 
     def send_message(self, contact_jid, message):
         self.connection.send(xmpp.Message(contact_jid, message))
