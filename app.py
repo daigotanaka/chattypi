@@ -87,6 +87,7 @@ class Application(object):
         self.sound_proc = None
         self.is_mic_down = False
         self.inet_check_attempts = 0
+        self.exit_now = False
 
         self.audio_in_device = str(config.get("audio")["in_device"])
 
@@ -104,12 +105,6 @@ class Application(object):
         self.core.register_commands()
         self.import_plugins()
 
-        self.sphinx = subprocess.Popen(
-            ["/home/pi/chattypi/bin/ps"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True)
-
         all_commands = ""
         for key in self.command2signal.keys():
             all_commands += self.nickname + " " + key + "\n"
@@ -117,8 +112,20 @@ class Application(object):
         with open(corpus_file, "w") as f:
             f.write(all_commands)
 
+        self._sphinx = None
         # GPS
         self.gps = gps(mode=WATCH_ENABLE)
+
+    @property
+    def sphinx(self):
+        if self._sphinx is None or self._sphinx.poll() is not None:
+            self.logger.debug("Restarting sphinx")
+            self._sphinx = subprocess.Popen(
+                ["/home/pi/chattypi/bin/ps"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True)
+        return self._sphinx
 
     @property
     def audio_out_device(self):
@@ -161,17 +168,22 @@ class Application(object):
             f.write(text + "\n")
 
     def run(self, args=None):
+        vol = 0
+        while vol < self.min_volume:
+            self.record_once()
+            vol = self.get_volume()
         self.loop()
 
     def loop(self):
-        self.exit_now = False
         self.rotation = 0
         while not self.exit_now:
+            self.sphinx.poll()
             message = self.listen_once()
-            if self.nickname != message[0:len(self.nickname)]:
-                print message
+            head = message.find(self.nickname)
+            if head == -1:
+                self.logger.debug(message)
                 continue
-            message =  message[len(self.nickname):].strip()
+            message = message[head + len(self.nickname):].strip()
             if message:
                 self.execute_order(message)
         self.sphinx.kill()
@@ -259,7 +271,7 @@ class Application(object):
         self.execute_order(text)
 
     def execute_order(self, text):
-        nickname = CommandNickname().select().where(CommandNickname.nickname==text.lower())
+        nickname = CommandNickname().select().where(CommandNickname.nickname==text)
         if nickname and nickname.count():
             text = nickname[0].command
         self.do_execute_order(text)
@@ -288,19 +300,19 @@ class Application(object):
         return
 
         # TODO(daigo): Clean up the code below
-        if text.lower() == "reset recording level":
+        if text == "reset recording level":
             self.min_volume = self.vol_average * 1.5
             message = "Set minimum voice level to %.1f" % self.min_volume
             config.get("audio")["min_volume"] = self.min_volume
             config.write()
  
-        elif text.lower() == "set recording level":
+        elif text == "set recording level":
             self.min_volume = self.current_volume * 0.75
             message = "Set minimum voice level to %.1f" % self.min_volume
             config.get("audio")["min_volume"] = self.min_volume
             config.write()
  
-        elif text.lower() == "add contact":
+        elif text == "add contact":
             self.add_contact()
             return
  
@@ -311,12 +323,11 @@ class Application(object):
         cues = config.get("system")["cue"].split(" ")
         cues.append(self.nickname)
         for cue in cues:
-            if cue in text.lower():
+            if cue in text:
                 return True
         return False
 
     def is_command(self, text, command):
-        text = text.lower().strip(" ")
         if text[0:len(command)] == command:
             return True
         return False
@@ -485,14 +496,14 @@ class Application(object):
         self.logger.debug(text)
         count = 0
         while (count < 2
-            and (not text or not ("yes" in text.lower() or "no" in text.lower()))):
+            and (not text or not ("yes" in text or "no" in text))):
             count += 1
             self.logger.debug(message)
             self.logger.info("%s: Please answer by yes or no" % self.nickname)
             self.play_sound("sound/yes_or_no.mp3")
             text = self.listen_once(duration=3.0)
             self.logger.debug(text)
-        if text and "yes" in text.lower():
+        if text and "yes" in text:
             return True
         return False
 
@@ -540,11 +551,11 @@ if __name__ == "__main__":
         process = Process(target=start_server, args=(None,))
         process.start()
 
-    try:
-        app.run()
-    except Exception, err:
-        app.logger.error(err)
-        raise
+    while not app.exit_now:
+        try:
+            app.run()
+        except Exception, err:
+            app.logger.error(err)
 
     if app.screen_on:
         process.terminate()

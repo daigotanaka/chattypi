@@ -73,18 +73,19 @@ class GoogleTalkPlugin(Plugin):
         nickname = str(from_)
         nickname = nickname[0:nickname.find("@")]
         message = message_node.getBody() or message_node.getSubject()
+        if not message:
+            return
+        message = message.encode('utf-8').lower().strip()
         self.current_connection = connect_object
-        if self.app.nickname + ":" == str(message).strip()[0:len(self.app.nickname) + 1]:
-            message =  message.strip().lower()[len(self.app.nickname) + 1:]
+        if self.app.nickname + ":" == message[0:len(self.app.nickname) + 1]:
+            message =  message[len(self.app.nickname) + 1:]
             self.app.do_execute_order(message)
-        elif message:
+        else:
             if self.last_nickname != nickname:
                 text = nickname + " says: " + message
             else:
                 text = message
             self.app.say(text)
-        elif self.last_nickname != nickname:
-            self.app.say(nickname + " is sending a message")
         self.last_from = from_
         self.last_nickname = nickname
         self.app.add_corpus(message)
@@ -95,7 +96,12 @@ class GoogleTalkPlugin(Plugin):
     def respond(self, param, **kwargs):
         if not self.last_from:
             return
+        self.app.say("Respond to " + self.last_nickname + ": " + param)
+        if not self.app.confirm():
+            self.app.say("Canceled")
+            return 
         self.send_message(self.last_from, param)
+        self.app.say("Message sent")
 
  
 if __name__ == "__main__":

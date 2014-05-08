@@ -80,7 +80,7 @@ file = string(max=1024, default="data/addressbook.csv")
 [audio]
 has_pulse = boolean(default=False)
 out_device = integer(0, 1, default=0)
-in_device = string(max=256, default="plughw:1,0")
+in_device = string(max=256, default="plughw:0,0")
 sample_rate = integer(16000, 48000, default=48000)
 min_volume = float(0.0, 10.0, default=0.005)
 idle_duration = float(1.0, 5.0, default=1.5)
