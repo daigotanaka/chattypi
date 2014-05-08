@@ -41,6 +41,7 @@ class GoogleTalkPlugin(Plugin):
         super(GoogleTalkPlugin, self).__init__(app)
 
         self.last_from = None
+        self.last_nickname = ""
         self.gtalk_thread = Thread(target=self.gtalk_loop)
         self.gtalk_thread.start()
 
@@ -56,7 +57,7 @@ class GoogleTalkPlugin(Plugin):
         domain = self.app.config.get("google_talk")["domain"]
         server = self.app.config.get("google_talk")["server"]
         port = self.app.config.get("google_talk")["port"]
-        self.connection = xmpp.Client(domain) 
+        self.connection = xmpp.Client(domain, debug=[]) 
         self.connection.connect(server=(server, port))
         result = self.connection.auth(jid.getNode(), password, "LFY-client") 
         self.connection.RegisterHandler("message", self.message_handler) 
@@ -69,22 +70,23 @@ class GoogleTalkPlugin(Plugin):
 
     def message_handler(self, connect_object, message_node):
         from_ = message_node.getFrom()
-        message = message_node.getBody() or message_node.getSubject()
-        self.current_connection = connect_object
         nickname = str(from_)
         nickname = nickname[0:nickname.find("@")]
+        message = message_node.getBody() or message_node.getSubject()
+        self.current_connection = connect_object
         if self.app.nickname + ":" == str(message).strip()[0:len(self.app.nickname) + 1]:
             message =  message.strip().lower()[len(self.app.nickname) + 1:]
             self.app.do_execute_order(message)
         elif message:
-            if self.last_from != from_:
+            if self.last_nickname != nickname:
                 text = nickname + " says: " + message
             else:
                 text = message
             self.app.say(text)
-        elif self.last_from != from_:
+        elif self.last_nickname != nickname:
             self.app.say(nickname + " sent a message")
         self.last_from = from_
+        self.last_nickname = nickname
         self.add_corpus(message)
 
     def add_corpus(self, text):
