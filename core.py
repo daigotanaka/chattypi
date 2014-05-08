@@ -140,3 +140,4 @@ class CoreCommands(object):
 
     def current_address(self):
         self.app.say("You are near %s" % self.app.get_current_address()["formatted_address"])
+        self.app.add_corpus(self.app.get_current_address()["formatted_address"])

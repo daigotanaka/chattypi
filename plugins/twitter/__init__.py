@@ -88,6 +88,7 @@ class TwitterPlugin(Plugin):
 
             self.app.say(text)
             self.app.say(tweeted_at_pretty)
+            self.app.add_corpus(text)
 
 
 class Twitter(object):

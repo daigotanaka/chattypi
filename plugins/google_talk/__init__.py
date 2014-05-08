@@ -87,14 +87,7 @@ class GoogleTalkPlugin(Plugin):
             self.app.say(nickname + " is sending a message")
         self.last_from = from_
         self.last_nickname = nickname
-        self.add_corpus(message)
-
-    def add_corpus(self, text):
-        if not text:
-            return
-        text  = re.sub(r"[^\w]", " ", text).strip()
-        with open(self.app.config.get("sphinx")["corpus_file"], "a") as f:
-            f.write(text + "\n")
+        self.app.add_corpus(message)
 
     def send_message(self, contact_jid, message):
         self.connection.send(xmpp.Message(contact_jid, message))

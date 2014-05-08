@@ -153,6 +153,13 @@ class Application(object):
             self.logger.debug("Registered '%s' command with '%s' singnal"
                 % (command, signal))
 
+    def add_corpus(self, text):
+        if not text:
+            return
+        text  = re.sub(r"[^\w]", " ", text).strip()
+        with open(self.config.get("sphinx")["corpus_file"], "a") as f:
+            f.write(text + "\n")
+
     def run(self, args=None):
         self.loop()
 
