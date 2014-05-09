@@ -1,0 +1,3 @@
+cat /home/pi/chattypi/data/command_corpus.txt > /home/pi/chattypi/data/corpus_final.txt
+cat /home/pi/chattypi/data/corpus.txt >> /home/pi/chattypi/data/corpus_final.txt
+/home/pi/chattypi/cp-venv/bin/python /home/pi/chattypi/update_corpus.py

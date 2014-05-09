@@ -133,7 +133,7 @@ class Application(object):
                 vol = self.get_volume()
             self.logger.debug("Restarting sphinx")
             self._sphinx = subprocess.Popen(
-                ["/home/pi/chattypi/bin/ps"],
+                ["/home/pi/chattypi/bin/runps"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True)
@@ -295,9 +295,7 @@ class Application(object):
         nickname = CommandNickname().select().where(CommandNickname.nickname==text)
         if nickname and nickname.count():
             text = nickname[0].command
-        self.do_execute_order(text)
 
-    def do_execute_order(self, text):
         for command in self.command2signal:
             if not self.is_command(text, command):
                 continue
