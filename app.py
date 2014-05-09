@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,6 +24,7 @@ from config import config
 from gps import gps, WATCH_ENABLE
 from multiprocessing import Process
 from pydispatch import dispatcher
+from Queue import Queue
 from threading import Thread
 from time import sleep
 
@@ -44,7 +45,6 @@ from models import connect_db, CommandNickname
 from speech2text import Speech2Text
 
 import libs
-import plugins
 # import update_corpus
 
 
@@ -52,10 +52,11 @@ class Application(object):
 
     def __init__(self):
         self.config = config
+        self.messages = Queue()
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(config.get("system")["logfile"])
-        if config.get("debug") == True:
+        if config.get("debug"):
             ch = logging.StreamHandler()
             ch.setLevel(logging.DEBUG)
             self.logger.addHandler(ch)
@@ -67,7 +68,9 @@ class Application(object):
 
         self.usr_bin_path = config.get("system")["usr_bin"]
         self.default_path = config.get("system")["default_path"]
-        self.data_path = os.path.join(self.default_path, config.get("system")["data_dir"])
+        self.data_path = os.path.join(
+            self.default_path,
+            config.get("system")["data_dir"])
         self.greeted = False
         self.exist_now = False
         self.nickname = config.get("computer_nickname")
@@ -95,9 +98,13 @@ class Application(object):
 
         self.clean_files()
 
-        self.addressbook = AddressBook(user=self.user, file=config.get("addressbook")["file"])
+        self.addressbook = AddressBook(
+            user=self.user,
+            file=config.get("addressbook")["file"])
         self.listener = Listener(user=self.user, sample_rate=self.sample_rate)
-        self.speech2text = Speech2Text(user=self.user, sample_rate=self.sample_rate)
+        self.speech2text = Speech2Text(
+            user=self.user,
+            sample_rate=self.sample_rate)
 
         # Voice command to event dispatch singnal table
         self.command2signal = {}
@@ -135,7 +142,8 @@ class Application(object):
     @property
     def audio_out_device(self):
         out_device = str(config.get("audio")["out_device"])
-        return ("pulse::" + out_device if config.get("audio")["has_pulse"]
+        return (
+            "pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
 
     def import_plugins(self):
@@ -144,12 +152,9 @@ class Application(object):
         for plugin in os.listdir(path):
             if plugin == "__init__.py":
                 continue
-            if (plugin != "__init__.py"
-                and os.path.isdir(os.path.join(path, plugin))
-                and os.path.exists(
-                    os.path.join(path, plugin, "__init__.py")
-                    )
-                ):
+            if (plugin != "__init__.py" and
+                    os.path.isdir(os.path.join(path, plugin)) and
+                    os.path.exists(os.path.join(path, plugin, "__init__.py"))):
                 module = libs.dynamic_import("plugins." + plugin)
                 module.register(self)
 
@@ -158,17 +163,19 @@ class Application(object):
             voice_commands = [voice_commands]
         for command in voice_commands:
             if command in self.command2signal:
-                raise Exception("Voice command %s already registered"
+                raise Exception(
+                    "Voice command %s already registered"
                     % command)
             self.command2signal[command] = signal
             dispatcher.connect(func, signal=signal, sender=dispatcher.Any)
-            self.logger.debug("Registered '%s' command with '%s' singnal"
+            self.logger.debug(
+                "Registered '%s' command with '%s' singnal"
                 % (command, signal))
 
     def add_corpus(self, text):
         if not text:
             return
-        text  = re.sub(r"[^\w]", " ", text).strip()
+        text = re.sub(r"[^\w]", " ", text).strip()
         with open(self.config.get("sphinx")["corpus_file"], "a") as f:
             f.write(text + "\n")
 
@@ -195,7 +202,11 @@ class Application(object):
         while not self.exit_now:
             if not self.listener.keep_recording:
                 self.listener.keep_recording = True
-                self.listener_thread = Thread(target=self.listener.continuous_recording, kwargs={"file": self.flac_file, "duration": self.idle_duration})
+                self.listener_thread = Thread(
+                    target=self.listener.continuous_recording,
+                    kwargs={
+                        "file": self.flac_file,
+                        "duration": self.idle_duration})
                 self.listener_thread.start()
             self.checkin()
             self.rotation = (self.rotation + 1) % 2
@@ -211,7 +222,8 @@ class Application(object):
                 self.greeted = False
 
                 self.inet_check_attempts += 1
-                if self.inet_check_attempts <= config.get("system")["inet_check_max_attempts"]:
+                if (self.inet_check_attempts <=
+                        config.get("system")["inet_check_max_attempts"]):
                     sleep(10)
                     return
 
@@ -228,7 +240,9 @@ class Application(object):
                 self.greeted = True
 
         vol = self.get_volume(rotation=self.rotation)
-        self.logger.debug("vol=%.4f avg=%.2f rotation=%d" % (vol, self.vol_average, self.rotation))
+        self.logger.debug(
+            "vol=%.4f avg=%.2f rotation=%d" %
+            (vol, self.vol_average, self.rotation))
 
         if vol < self.min_volume:
             self.prev_idle_vol = vol
@@ -241,7 +255,10 @@ class Application(object):
         self.logger.debug("!")
 
         # If the mic was muted previously and turned on, prompt for command
-        text = self.get_text_from_last_heard(rotation=self.rotation) if self.prev_idle_vol > self.min_volume else self.nickname
+        if self.prev_idle_vol > self.min_volume:
+            text = self.get_text_from_last_heard(rotation=self.rotation)
+        else:
+            text = self.nickname
         self.prev_idle_vol = vol
 
         if not text:
@@ -262,7 +279,9 @@ class Application(object):
         self.take_order(acknowledge=True)
 
     def take_order(self, acknowledge=True):
-        text = self.listen_once(duration=self.take_order_duration, acknowledge=acknowledge)
+        text = self.listen_once(
+            duration=self.take_order_duration,
+            acknowledge=acknowledge)
         if not text:
             self.logger.debug("?")
             if acknowledge:
@@ -283,7 +302,7 @@ class Application(object):
             if not self.is_command(text, command):
                 continue
             sig = self.command2signal[command]
-            if not sig in ["repeat command", "nickname command"]:
+            if sig not in ["repeat command", "nickname command"]:
                 self.last_command = text
             param = self.get_param(text, command)
             self.logger.debug("Dispatching signal: %s" % sig)
@@ -307,17 +326,17 @@ class Application(object):
             message = "Set minimum voice level to %.1f" % self.min_volume
             config.get("audio")["min_volume"] = self.min_volume
             config.write()
- 
+
         elif text == "set recording level":
             self.min_volume = self.current_volume * 0.75
             message = "Set minimum voice level to %.1f" % self.min_volume
             config.get("audio")["min_volume"] = self.min_volume
             config.write()
- 
+
         elif text == "add contact":
             self.add_contact()
             return
- 
+
     def strip_command(self, text, command):
         return text[len(command):].strip(" ")
 
@@ -348,12 +367,15 @@ class Application(object):
                 os.remove(file)
 
     def play_sound(self, file="", url="", nowait=False):
-        file = (os.path.join(self.default_path, file) if not url
+        file = (
+            os.path.join(self.default_path, file) if not url
             else "\"" + url + "\"")
         if self.sound_proc:
             self.sound_proc.wait()
 
-        cmd = os.path.join(self.usr_bin_path, "mplayer") + " -ao " + self.audio_out_device + " -really-quiet " + file
+        cmd = (
+            os.path.join(self.usr_bin_path, "mplayer") + " -ao " +
+            self.audio_out_device + " -really-quiet " + file)
 
         if nowait:
             self.sound_proc = subprocess.Popen((cmd).split(" "))
@@ -417,8 +439,8 @@ class Application(object):
         return vol
 
     def listen_once(self, duration=3.0, acknowledge=False):
-        message = None
-        while not self.exit_now and not message:
+        message = self.messages.get()
+        while not message and not self.exit_now:
             output = self.sphinx.stdout.readline()
             if "READY" in output and not self.greeted:
                 self.greeted = True

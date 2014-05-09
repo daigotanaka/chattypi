@@ -22,18 +22,21 @@
 
 from threading import Thread
 
-import re
 import xmpp
 
 from plugins import Plugin
-from config import config
+from config import config  # NOQA
+
 
 def register(app):
     if not app.config.get("google_talk")["active"]:
         return
     global google_talk_plugin
     google_talk_plugin = GoogleTalkPlugin(app)
-    app.register_command(["tell him", "tell her", "tell them"], "gtalk_respond", google_talk_plugin.respond)
+    app.register_command(
+        ["tell him", "tell her", "tell them"],
+        "gtalk_respond",
+        google_talk_plugin.respond)
 
 
 class GoogleTalkPlugin(Plugin):
@@ -52,17 +55,17 @@ class GoogleTalkPlugin(Plugin):
         /* ]]> */
         </script>""" % self.app.config.get("google_talk")["email"]
         password = self.app.config.get("google_talk")["password"]
-        
+
         jid = xmpp.JID(user)
         domain = self.app.config.get("google_talk")["domain"]
         server = self.app.config.get("google_talk")["server"]
         port = self.app.config.get("google_talk")["port"]
-        self.connection = xmpp.Client(domain, debug=[]) 
+        self.connection = xmpp.Client(domain, debug=[])
         self.connection.connect(server=(server, port))
-        result = self.connection.auth(jid.getNode(), password, "LFY-client") 
-        self.connection.RegisterHandler("message", self.message_handler) 
+        self.connection.auth(jid.getNode(), password, "LFY-client")
+        self.connection.RegisterHandler("message", self.message_handler)
 
-        self.connection.sendInitPresence() 
+        self.connection.sendInitPresence()
 
         while not self.app.exit_now and self.connection.Process(1):
             pass
@@ -78,8 +81,10 @@ class GoogleTalkPlugin(Plugin):
         message = message.encode('utf-8').lower().strip()
         self.current_connection = connect_object
         if self.app.nickname + ":" == message[0:len(self.app.nickname) + 1]:
-            message =  message[len(self.app.nickname) + 1:].strip()
-            self.app.do_execute_order(message)
+            message = (
+                self.app.nickname + " " +
+                message[len(self.app.nickname) + 1:].strip())
+            self.app.messages.put(message)
         else:
             if self.last_nickname != nickname:
                 text = nickname + " says: " + message
@@ -99,10 +104,10 @@ class GoogleTalkPlugin(Plugin):
         self.app.say("Respond to " + self.last_nickname + ": " + param)
         if not self.app.confirm():
             self.app.say("Canceled")
-            return 
+            return
         self.send_message(self.last_from, param)
         self.app.say("Message sent")
 
- 
+
 if __name__ == "__main__":
-   pass
+    pass
