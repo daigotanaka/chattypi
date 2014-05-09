@@ -70,6 +70,7 @@ inet_check_max_attempts = integer(1, 10, default=3)
 cue = string(max=1024, default="hey ok okay listen")
 screen = boolean(default=False)
 data_dir = string(max=256, default="data")
+have_gps = boolean(default=False)
 
 [sphinx]
 corpus_file = string(max=1024, default="data/corpus.txt")

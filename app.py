@@ -24,12 +24,12 @@ from config import config
 from gps import gps, WATCH_ENABLE
 from multiprocessing import Process
 from pydispatch import dispatcher
-from Queue import Queue
 from threading import Thread
 from time import sleep
 
 import logging
 import os
+import Queue
 import re
 import requests
 import simplejson
@@ -52,7 +52,7 @@ class Application(object):
 
     def __init__(self):
         self.config = config
-        self.messages = Queue()
+        self.messages = Queue.Queue()
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(config.get("system")["logfile"])
@@ -119,9 +119,14 @@ class Application(object):
         with open(corpus_file, "w") as f:
             f.write(all_commands)
 
+        self.listener_thread = None
+
         self._sphinx = None
-        # GPS
-        self.gps = gps(mode=WATCH_ENABLE)
+
+        if config.get("system")["have_gps"]:
+            self.gps = gps(mode=WATCH_ENABLE)
+        else:
+            self.gps = None
 
     @property
     def sphinx(self):
@@ -133,7 +138,7 @@ class Application(object):
                 vol = self.get_volume()
             self.logger.debug("Restarting sphinx")
             self._sphinx = subprocess.Popen(
-                ["/home/pi/chattypi/bin/runps"],
+                [self.default_path + "/bin/runps"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True)
@@ -180,13 +185,15 @@ class Application(object):
             f.write(text + "\n")
 
     def run(self, args=None):
+        if self.listener_thread is None or not self.listener_thread.is_alive():
+            self.listener_thread = Thread(target=self.listen)
+            self.listener_thread.start()
         self.loop()
 
     def loop(self):
         self.rotation = 0
         while not self.exit_now:
-            self.sphinx.poll()
-            message = self.listen_once()
+            message = self.get_one_message()
             head = message.find(self.nickname)
             if head == -1:
                 self.logger.debug(message)
@@ -195,101 +202,12 @@ class Application(object):
             message = message[head + len(self.nickname):].strip()
             if message:
                 self.execute_order(message)
+        self.listener_thread.join(1.0)
+        if self.listener_thread.is_alive():
+            self.listener_thread._Thread__stop()
         self.sphinx.kill()
         self.logger.debug("Terminated Sphinx")
         return
-
-        while not self.exit_now:
-            if not self.listener.keep_recording:
-                self.listener.keep_recording = True
-                self.listener_thread = Thread(
-                    target=self.listener.continuous_recording,
-                    kwargs={
-                        "file": self.flac_file,
-                        "duration": self.idle_duration})
-                self.listener_thread.start()
-            self.checkin()
-            self.rotation = (self.rotation + 1) % 2
-
-    def checkin(self):
-        if self.vol_samples == 6:
-            if not self.get_ip():
-                # The internet is down
-                self.logger.info("%s: The internet is down" % self.nickname)
-                self.play_sound("sound/down.wav")
-
-                # Make the computer greet again when the internet is back
-                self.greeted = False
-
-                self.inet_check_attempts += 1
-                if (self.inet_check_attempts <=
-                        config.get("system")["inet_check_max_attempts"]):
-                    sleep(10)
-                    return
-
-                self.logger.info("%s: ?" % self.nickname)
-                self.play_sound("sound/bloop_x.wav")
-                exit()
-
-            # We have the internet
-            self.inet_check_attempts = 0
-
-            if not self.greeted:
-                self.logger.info("%s: Voice command ready" % self.nickname)
-                self.play_sound("sound/voice_command_ready.mp3")
-                self.greeted = True
-
-        vol = self.get_volume(rotation=self.rotation)
-        self.logger.debug(
-            "vol=%.4f avg=%.2f rotation=%d" %
-            (vol, self.vol_average, self.rotation))
-
-        if vol < self.min_volume:
-            self.prev_idle_vol = vol
-            return
-        if not self.is_loud(vol) and self.prev_idle_vol > self.min_volume:
-            self.prev_idle_vol = vol
-            self.update_noise_level(vol)
-            return
-
-        self.logger.debug("!")
-
-        # If the mic was muted previously and turned on, prompt for command
-        if self.prev_idle_vol > self.min_volume:
-            text = self.get_text_from_last_heard(rotation=self.rotation)
-        else:
-            text = self.nickname
-        self.prev_idle_vol = vol
-
-        if not text:
-            self.logger.debug("I thought I heard something...")
-            self.update_noise_level(vol)
-            return
-        self.logger.info("%s: %s" % (self.user_nickname, text))
-
-        if not self.is_cue(text):
-            return
-
-        self.listener.keep_recording = False
-        self.listener_thread.join()
-
-        self.logger.info("%s: yes?" % self.nickname)
-        self.play_sound("sound/yes.mp3")
-
-        self.take_order(acknowledge=True)
-
-    def take_order(self, acknowledge=True):
-        text = self.listen_once(
-            duration=self.take_order_duration,
-            acknowledge=acknowledge)
-        if not text:
-            self.logger.debug("?")
-            if acknowledge:
-                self.play_sound("sound/bloop_x.wav")
-            return
-
-        self.logger.debug("Excecuting order...")
-        self.execute_order(text)
 
     def execute_order(self, text):
         nickname = CommandNickname().select().where(
@@ -311,30 +229,6 @@ class Application(object):
         else:
             message = "Did you say, %s?" % text
             self.say(message)
-
-        return
-
-        if not self.exit_now:
-            self.take_order(acknowledge=False)
-
-        return
-
-        # TODO(daigo): Clean up the code below
-        if text == "reset recording level":
-            self.min_volume = self.vol_average * 1.5
-            message = "Set minimum voice level to %.1f" % self.min_volume
-            config.get("audio")["min_volume"] = self.min_volume
-            config.write()
-
-        elif text == "set recording level":
-            self.min_volume = self.current_volume * 0.75
-            message = "Set minimum voice level to %.1f" % self.min_volume
-            config.get("audio")["min_volume"] = self.min_volume
-            config.write()
-
-        elif text == "add contact":
-            self.add_contact()
-            return
 
     def strip_command(self, text, command):
         return text[len(command):].strip(" ")
@@ -414,7 +308,6 @@ class Application(object):
     def get_text_from_last_heard(self, rotation=0):
         self.listener.playing = rotation
         while self.listener.recording == self.listener.playing:
-            print "waiting...%d" % rotation
             sleep(0.5)
         text = self.speech2text.convert_flac_to_text(
             infile=self.flac_file % rotation)
@@ -442,10 +335,21 @@ class Application(object):
             self.is_mic_down = False
         return vol
 
-    def listen_once(self, duration=3.0, acknowledge=False):
-        message = self.messages.get()
-        while not message and not self.exit_now:
+    def get_one_message(self, duration=3.0, acknowledge=False):
+        message = ""
+        try:
+            message = self.messages.get()
+        except Queue.Empty:
+            pass
+        message = re.sub(r"[^\w]", " ", message)
+        return message.lower().strip()
+
+    def listen(self):
+        self.on_mute = False
+        while not self.exit_now:
             output = self.sphinx.stdout.readline()
+            if self.on_mute:
+                continue
             if "READY" in output and not self.greeted:
                 self.greeted = True
                 self.play_sound("sound/voice_command_ready.mp3")
@@ -453,31 +357,10 @@ class Application(object):
             m = re.search(r"\d{9}: .*", output)
             if m:
                 message = m.group(0)[11:]
-        if message:
-            message = re.sub(r"[^\w]", " ", message)
-            return message.lower().strip()
-        return None
-
-        ####################################
-        # Old code to rely on Google Service
-        self.record_once(duration=duration)
-        vol = self.listener.get_volume(file=self.flac_file, rotation=0)
-        self.current_volume = vol
-
-        if not self.is_loud(vol):
-            return None
-
-        self.logger.debug("Heard at volume = %.2f" % vol)
-        if acknowledge:
-            self.play_sound("sound/click_x.wav", nowait=True)
-        text = self.get_text_from_last_heard()
-        self.logger.info("%s: %s" % (self.user_nickname, text))
-        if text:
-            return text.strip(" ")
-        return None
+                self.messages.put(message)
 
     def record_content(self, duration=10.0):
-        content = self.listen_once(duration=duration)
+        content = self.get_one_message(duration=duration)
         if content:
             return content
 
@@ -485,7 +368,7 @@ class Application(object):
             self.nickname +
             ": Sorry, I could not catch that. Please try again.")
         self.play_sound("sound/try_again.mp3")
-        content = self.listen_once(duration=duration)
+        content = self.get_one_message(duration=duration)
         self.logger.debug(content)
         if content:
             return content
@@ -521,7 +404,7 @@ class Application(object):
         else:
             self.logger.info("%s: Is that OK?" % self.nickname)
             self.play_sound("sound/is_that_ok.mp3")
-        text = self.listen_once(duration=3.0)
+        text = self.get_one_message(duration=3.0)
         self.logger.debug(text)
         count = 0
         while (
@@ -531,7 +414,7 @@ class Application(object):
             self.logger.debug(message)
             self.logger.info("%s: Please answer by yes or no" % self.nickname)
             self.play_sound("sound/yes_or_no.mp3")
-            text = self.listen_once(duration=3.0)
+            text = self.get_one_message(duration=3.0)
             self.logger.debug(text)
         if text and "yes" in text:
             return True
@@ -557,6 +440,8 @@ class Application(object):
         response.read()
 
     def get_lat_long(self):
+        if not self.gps:
+            return None, None
         for i in range(0, 10):
             value = self.gps.next()
             if value and hasattr(value, "lat"):
@@ -567,6 +452,8 @@ class Application(object):
 
     def get_current_address(self):
         lat, lng = self.get_lat_long()
+        if lat is None:
+            return None
         response = requests.get(
             "http://maps.googleapis.com/maps/api/geocode/json?" +
             "latlng=%s,%s&sensor=false" % (lat, lng))
