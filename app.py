@@ -292,7 +292,8 @@ class Application(object):
         self.execute_order(text)
 
     def execute_order(self, text):
-        nickname = CommandNickname().select().where(CommandNickname.nickname==text)
+        nickname = CommandNickname().select().where(
+            CommandNickname.nickname == text)
         if nickname and nickname.count():
             text = nickname[0].command
 
@@ -415,23 +416,28 @@ class Application(object):
         while self.listener.recording == self.listener.playing:
             print "waiting...%d" % rotation
             sleep(0.5)
-        text = self.speech2text.convert_flac_to_text(infile=self.flac_file % rotation).replace("\n", " ").strip(" ")
+        text = self.speech2text.convert_flac_to_text(
+            infile=self.flac_file % rotation)
+        text = text.replace("\n", " ").strip(" ")
         self.listener.playing = None
         return text
 
     def record_once(self, duration=1.0):
         if os.path.exists(self.flac_file % 0):
             os.remove(self.flac_file % 0)
-        self.listener.record_flac(file=self.flac_file % 0, hw=self.audio_in_device, duration=duration)
+        self.listener.record_flac(
+            file=self.flac_file % 0,
+            hw=self.audio_in_device,
+            duration=duration)
 
     def get_volume(self, rotation=0):
         vol = self.listener.get_volume(file=self.flac_file, rotation=rotation)
         if vol < 0:
-            if self.is_mic_down == False:
+            if not self.is_mic_down:
                 self.say("Microphone is busy or down")
                 self.is_mic_down = True
             return 0.0
-        if self.is_mic_down == True:
+        if self.is_mic_down:
             self.say("Microphone is up")
             self.is_mic_down = False
         return vol
@@ -446,10 +452,9 @@ class Application(object):
 
             m = re.search(r"\d{9}: .*", output)
             if m:
-                code = m.group(0)[0:9]
                 message = m.group(0)[11:]
         if message:
-            message  = re.sub(r"[^\w]", " ", message)
+            message = re.sub(r"[^\w]", " ", message)
             return message.lower().strip()
         return None
 
@@ -476,7 +481,9 @@ class Application(object):
         if content:
             return content
 
-        self.logger.info("%s: Sorry, I could not catch that. Please try again." % self.nickname)
+        self.logger.info(
+            self.nickname +
+            ": Sorry, I could not catch that. Please try again.")
         self.play_sound("sound/try_again.mp3")
         content = self.listen_once(duration=duration)
         self.logger.debug(content)
@@ -517,8 +524,9 @@ class Application(object):
         text = self.listen_once(duration=3.0)
         self.logger.debug(text)
         count = 0
-        while (count < 2
-            and (not text or not ("yes" in text or "no" in text))):
+        while (
+            count < 2 and
+                (not text or not ("yes" in text or "no" in text))):
             count += 1
             self.logger.debug(message)
             self.logger.info("%s: Please answer by yes or no" % self.nickname)
@@ -537,9 +545,8 @@ class Application(object):
             return
         url = "http://0.0.0.0:8000/update/"
         user_agent = "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)"
-        values = {
-            "html" : html }
-        headers = { "User-Agent" : user_agent }
+        values = {"html": html}
+        headers = {"User-Agent": user_agent}
         data = urllib.urlencode(values)
         req = urllib2.Request(url, data, headers)
         try:
@@ -547,7 +554,7 @@ class Application(object):
         except urllib2.HTTPError, err:
             self.logger.info(err)
             return
-        the_page = response.read()
+        response.read()
 
     def get_lat_long(self):
         for i in range(0, 10):
@@ -560,7 +567,9 @@ class Application(object):
 
     def get_current_address(self):
         lat, lng = self.get_lat_long()
-        response = requests.get("http://maps.googleapis.com/maps/api/geocode/json?latlng=%s,%s&sensor=false" % (lat, lng))
+        response = requests.get(
+            "http://maps.googleapis.com/maps/api/geocode/json?" +
+            "latlng=%s,%s&sensor=false" % (lat, lng))
         address = simplejson.loads(response.content)["results"]
         return address[0]
 
