@@ -91,8 +91,9 @@ class GoogleTalkPlugin(Plugin):
             else:
                 text = message
             self.app.say(text)
-        self.last_from = from_
-        self.last_nickname = nickname
+            # Don't update last_from if it is a command
+            self.last_from = from_
+            self.last_nickname = nickname
         self.app.add_corpus(message)
 
     def send_message(self, contact_jid, message):
