@@ -33,6 +33,7 @@ import Queue
 import re
 import requests
 import simplejson
+# import shlex
 import socket
 import subprocess
 import urllib
@@ -137,6 +138,16 @@ class Application(object):
                 self.record_once()
                 vol = self.get_volume()
             self.logger.debug("Restarting sphinx")
+            os.system(self.default_path + "/bin/killps")
+            # For a reason directly executing pocketsphinx_continous results
+            # in lack of lm and dic files
+            # cmd = (
+            #     "pocketsphinx_continuous -lm " +
+            #     self.default_path +
+            #     "/data/sample.lm -dict " +
+            #     self.default_path +
+            #     "/data/sample.dic")
+            # args = shlex.split(cmd)
             self._sphinx = subprocess.Popen(
                 [self.default_path + "/bin/runps"],
                 stdout=subprocess.PIPE,
