@@ -259,7 +259,11 @@ class Application(object):
         return False
 
     def get_param(self, text, command):
-        return text.strip(" ")[len(command):].strip(" ")
+        text = text[len(command):]
+        endpos = text.find(self.config.get("audio")["param_terminator"])
+        if endpos > -1:
+            text = text[:endpos]
+        return text.strip()
 
     def clean_files(self):
         files = [

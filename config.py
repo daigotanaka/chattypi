@@ -86,6 +86,7 @@ sample_rate = integer(16000, 48000, default=48000)
 min_volume = float(0.0, 10.0, default=0.005)
 idle_duration = float(1.0, 5.0, default=1.5)
 take_order_duration = float(2.0, 10.0, default=5.0)
+param_terminator = string(max=256, default="over")
 """
 
 configspec = CONFIGSPEC.split("\n")
