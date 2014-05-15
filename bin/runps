@@ -1,1 +1,2 @@
 pocketsphinx_continuous -lm /home/pi/chattypi/data/sample.lm -dict /home/pi/chattypi/data/sample.dic
+# pocketsphinx_continuous -lm /home/pi/chattypi/data/sample.lm -dict /home/pi/chattypi/data/sample.dic -hmm /home/pi/chattypi/data/am/rm1_200

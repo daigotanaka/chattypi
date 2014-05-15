@@ -60,7 +60,6 @@ class WolfRamAlphaPlugin(Plugin):
         self.app.logger.debug("Answer: %s" % answer)
 
         self.app.say(answer)
-        self.app.add_corpus(answer)
 
     def search_by_spelling(self):
         self.app.logger.info("%s: Please spell the search keyword" % self.app.nickname)

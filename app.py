@@ -123,6 +123,7 @@ class Application(object):
         self.listener_thread = None
 
         self._sphinx = None
+        os.system(self.default_path + "/bin/killps")
 
         if config.get("system")["have_gps"]:
             self.gps = gps(mode=WATCH_ENABLE)
@@ -287,6 +288,13 @@ class Application(object):
 
         os.system(cmd)
 
+    def recite(self, sentences):
+        for sentence in sentences:
+            self.say(sentence)
+            if self.nickname + " stop" in self.get_one_message():
+                self.logger.debug("Stopped reciting")
+                break
+
     def say(self, text, nowait=False):
         if not text.strip(" "):
             return
@@ -346,7 +354,7 @@ class Application(object):
             self.is_mic_down = False
         return vol
 
-    def get_one_message(self, duration=3.0, acknowledge=False):
+    def get_one_message(self):
         message = ""
         try:
             message = self.messages.get()
@@ -371,7 +379,7 @@ class Application(object):
                 self.messages.put(message)
 
     def record_content(self, duration=10.0):
-        content = self.get_one_message(duration=duration)
+        content = self.get_one_message()
         if content:
             return content
 
@@ -415,7 +423,7 @@ class Application(object):
         else:
             self.logger.info("%s: Is that OK?" % self.nickname)
             self.play_sound("sound/is_that_ok.mp3")
-        text = self.get_one_message(duration=3.0)
+        text = self.get_one_message()
         self.logger.debug(text)
         count = 0
         while (
@@ -425,7 +433,7 @@ class Application(object):
             self.logger.debug(message)
             self.logger.info("%s: Please answer by yes or no" % self.nickname)
             self.play_sound("sound/yes_or_no.mp3")
-            text = self.get_one_message(duration=3.0)
+            text = self.get_one_message()
             self.logger.debug(text)
         if text and "yes" in text:
             return True

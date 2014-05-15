@@ -74,6 +74,7 @@ class TwitterPlugin(Plugin):
             return
         statuses = self.twitter.get_tweets(username)
 
+        sentences = []
         for status in statuses:
             text = status["text"] + " "
             text = re.sub("http:\/\/.* ", "", text)
@@ -86,9 +87,9 @@ class TwitterPlugin(Plugin):
             tweeted_at = tweeted_at - datetime.timedelta(seconds=time.timezone - 3600 * time.daylight)
             tweeted_at_pretty = pretty.date(tweeted_at)
 
-            self.app.say(text)
-            self.app.say(tweeted_at_pretty)
-            self.app.add_corpus(text)
+            sentences.append(text)
+            sentences.append(tweeted_at_pretty)
+        self.app.recite(sentences)
 
 
 class Twitter(object):
