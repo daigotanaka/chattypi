@@ -190,6 +190,7 @@ class Application(object):
                 % (command, signal))
 
     def add_corpus(self, text):
+        self.logger.debug("Adding corpus: " + text)
         if not text:
             return
         text = re.sub(r"[^\w]", " ", text).strip()
@@ -292,36 +293,41 @@ class Application(object):
 
         os.system(cmd)
 
-    def recite(self, sentences):
+    def recite(self, sentences, corpus=False):
         for sentence in sentences:
-            self.say(sentence)
-            if self.nickname + " stop" in self.get_one_message():
+            if not self.say(sentence):
                 self.logger.debug("Stopped reciting")
+                return
+        if corpus:  # Add to corpus all at once instead of sentence by sentence
+            self.app.add_corpus(message)
+
+    def say(self, text, corpus=False, nowait=False):
+        self.logger.info("%s: %s" % (self.nickname, text))
+        words = text.split(" ")
+        index = 0
+        cont = True
+        while index < len(words):
+            block = " ".join(words[index:index + 10])
+            if block.strip():
+                self._say(block, nowait=nowait)
+            index += 10
+
+            if self.nickname + " stop" in self.get_one_message(wait=False):
+                cont = False
                 break
 
-    def say(self, text, nowait=False):
-        if not text.strip(" "):
-            return
-        words = text.split(" ")
-        if len(words) > 10:
-            index = 0
-            while index < len(words):
-                block = " ".join(words[index:index + 10])
-                self.say(block, nowait)
-                index += 10
-            return
+        if corpus:
+            self.add_corpus(text)
 
-        self.logger.info("%s: %s" % (self.nickname, text))
+        return cont
+
+    def _say(self, text, nowait):
         try:
             param = urllib.urlencode({"tl": "en", "q": text})
         except UnicodeEncodeError:
             return
-
         url = "http://translate.google.com/translate_tts?" + param
-        if not nowait:
-            self.play_sound(url=url, nowait=nowait)
-            return
-        return self.play_sound(url=url)
+        self.play_sound(url=url, nowait=nowait)
 
     def is_loud(self, vol):
         if self.min_volume < vol and (self.vol_average * 1.5 < vol):
@@ -358,10 +364,10 @@ class Application(object):
             self.is_mic_down = False
         return vol
 
-    def get_one_message(self):
+    def get_one_message(self, wait=True):
         message = ""
         try:
-            message = self.messages.get()
+            message = self.messages.get(wait)
         except Queue.Empty:
             pass
         message = re.sub(r"[^\w]", " ", message)

@@ -77,7 +77,6 @@ class GoogleTalkPlugin(Plugin):
         self.app.logger.debug("xmpp auth successful")
         self.connection.RegisterHandler("message", self.message_handler)
         self.app.logger.debug("xmpp registered handler")
-        self.app.say("Connected to XMPP server")
 
         self.connection.sendInitPresence()
 
@@ -99,16 +98,16 @@ class GoogleTalkPlugin(Plugin):
                 self.app.nickname + " " +
                 message[len(self.app.nickname) + 1:].strip())
             self.app.messages.put(message)
+            self.app.add_corpus(message)
         else:
             if self.last_nickname != nickname:
                 text = nickname + " says: " + message
             else:
                 text = message
-            self.app.say(text)
+            self.app.say(text, corpus=True)
             # Don't update last_from if it is a command
             self.last_from = from_
             self.last_nickname = nickname
-        self.app.add_corpus(message)
 
     def send_message(self, contact_jid, message):
         self.connection.send(xmpp.Message(contact_jid, message))
