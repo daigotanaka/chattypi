@@ -139,5 +139,7 @@ class CoreCommands(object):
         self.app.say("The nick name is replaced with %s" % self.app.last_command)
 
     def current_address(self):
-        self.app.say("You are near %s" % self.app.get_current_address()["formatted_address"])
-        self.app.add_corpus(self.app.get_current_address()["formatted_address"])
+        addr = self.app.get_current_address()
+        if not addr:
+            return
+        self.app.say("You are near %s" % addr["formatted_address"])

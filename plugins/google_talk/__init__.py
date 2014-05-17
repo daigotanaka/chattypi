@@ -77,6 +77,7 @@ class GoogleTalkPlugin(Plugin):
         self.app.logger.debug("xmpp auth successful")
         self.connection.RegisterHandler("message", self.message_handler)
         self.app.logger.debug("xmpp registered handler")
+        self.app.say("Connected to XMPP server")
 
         self.connection.sendInitPresence()
 
