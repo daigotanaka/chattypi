@@ -25,7 +25,6 @@ from gps import gps, WATCH_ENABLE
 from multiprocessing import Process
 from pydispatch import dispatcher
 from threading import Thread
-from time import sleep
 
 import logging
 import os
@@ -36,6 +35,7 @@ import simplejson
 # import shlex
 import socket
 import subprocess
+import time
 import urllib
 import urllib2
 
@@ -98,6 +98,8 @@ class Application(object):
         connect_db()
 
         self.clean_files()
+
+        self.periodic_tasks = {}
 
         self.addressbook = AddressBook(
             user=self.user,
@@ -189,6 +191,12 @@ class Application(object):
                 "Registered '%s' command with '%s' singnal"
                 % (command, signal))
 
+    def schedule_task(self, interval, func):
+        self.logger.debug("Scheduled %s with %d sec interval" %
+            (func, interval))
+        tasks = self.periodic_tasks.setdefault(str(interval), [])
+        tasks.append(func)
+
     def add_corpus(self, text):
         self.logger.debug("Adding corpus: " + text)
         if not text:
@@ -204,9 +212,20 @@ class Application(object):
         self.loop()
 
     def loop(self):
-        self.rotation = 0
         while not self.exit_now:
-            message = self.get_one_message()
+            current_time = int(time.time())
+            for interval in self.periodic_tasks.keys():
+                if current_time % int(interval) > 0:
+                    continue
+                for task in self.periodic_tasks[interval]:
+                    try:
+                        task()
+                    except Exception, e:
+                        self.logger.exception(e)
+
+            message = self.get_one_message(wait=False)
+            if not message:
+                continue
             head = message.find(self.nickname)
             if head == -1:
                 self.logger.debug(message)
@@ -337,7 +356,7 @@ class Application(object):
     def get_text_from_last_heard(self, rotation=0):
         self.listener.playing = rotation
         while self.listener.recording == self.listener.playing:
-            sleep(0.5)
+            time.sleep(0.5)
         text = self.speech2text.convert_flac_to_text(
             infile=self.flac_file % rotation)
         text = text.replace("\n", " ").strip(" ")

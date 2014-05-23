@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -42,6 +42,13 @@ class TwilioPlugin(Plugin):
             auth_token=app.config.get("twilio")["auth_token"],
         )
         self.my_phone = app.config.get("twilio")["my_phone"]
+
+        interval = app.config.get("twilio")["check_interval_sec"]
+        if interval > 0:
+            app.schedule_task(interval, self.check_sms)
+
+        self.last_checked = datetime.datetime(year=1970, month=1, day=1)
+
         super(TwilioPlugin, self).__init__(app)
 
     def send_sms(self, param):
@@ -73,19 +80,25 @@ class TwilioPlugin(Plugin):
         self.app.play_sound("sound/message_sent.mp3")
 
     def read_out_sms(self):
-        messages = self.twilio.fetch_received()
-        count = 0
-        for message in messages:
-            if message.status != "received":
-                continue
-            count += 1
-            self.app.say("Message %d" % count)
-            self.app.say(message.body)
-        if count == 0:
-            self.app.say("No messages today")
-        else:
-            self.app.say("End of messages")
+        check_sms(quiet=False, repeat=True)
 
+    def check_sms(self, quiet=True, repeat=False):
+        messages = self.twilio.fetch_received()
+        sentences = []
+        for message in messages:
+            if (message.status != "received" or
+                (not repeat and message.date_sent <= self.last_checked)):
+                continue
+            from_ = message.from_
+            from_ = from_[2:5] + "-" + from_[5:8] + "-" + from_[8:12]
+            sentences.append("Message from " + from_)
+            sentences.append(message.body)
+        if sentences:
+            sentences.append("End of messages")
+            self.app.recite(sentences)
+        elif not quiet:
+            self.app.say("No messages today")
+        self.last_checked = datetime.datetime.now()
 
 class Twilio(object):
 
