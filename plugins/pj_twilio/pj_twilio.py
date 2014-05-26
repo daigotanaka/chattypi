@@ -20,7 +20,8 @@ class PjTwilio(object):
             twilio_auth_token,
             twilml_url,
             incoming_call_callback=None,
-            on_hangup_callback=None):
+            pre_session_callback=None,
+            post_session_callback=None):
         self.my_number = my_number
         self.sip_domain = sip_domain
         self.sip_username = sip_username
@@ -29,17 +30,27 @@ class PjTwilio(object):
         self.twilio_auth_token = twilio_auth_token
         self.twilml_url = twilml_url
         self.incoming_call_callback = incoming_call_callback
-        self.on_hangup_callback = on_hangup_callback
+        self.pre_session_callback = pre_session_callback
+        self.post_session_callback = post_session_callback
 
         self.pj_outgoing_call = None
         self.pj_current_call = None
         self.log_callback = None
+
+        self._twilio_client = None
 
     def _call_log_cb(self, level, string, length):
             if self.log_callback:
                 self.log_callback(string)
             else:
                 print string
+
+    @property
+    def twilio_client(self):
+        if not self._twilio_client:
+            self._twilio_client = TwilioRestClient(self.twilio_account_sid,
+                self.twilio_auth_token)
+        return self._twilio_client
 
     def start(self):
         global pj_lib
@@ -70,7 +81,8 @@ class PjTwilio(object):
         acc_cb = SipAccountCallback(
             acc_in_cfg,
             self.incoming_call_callback,
-            self.on_hangup_callback)
+            self.pre_session_callback,
+            self.post_session_callback)
         self.acc_in = pj_lib.create_account(acc_in_cfg, cb=acc_cb)
 
     def terminate(self):
@@ -87,32 +99,37 @@ class PjTwilio(object):
         global pj_current_call
         try:
             print "Making call to", uri
-            pj_current_call = acc.make_call(uri, cb=SipCallCallback(on_hangup_callback=self.on_hangup_callback))
+            pj_current_call = acc.make_call(uri, cb=SipCallCallback(post_session_callback=self.post_session_callback))
         except pj.Error, e:
             print "Exception: " + str(e)
             return None
 
     def make_twilio_call(self, to_number):
         global pj_outgoing_call
-        client = TwilioRestClient(self.twilio_account_sid,
-            self.twilio_auth_token)
-        pj_outgoing_call = client.calls.create(
+        pj_outgoing_call = self.twilio_client.calls.create(
             url=self.twilml_url,
             to=to_number,
-            from_=self.my_number)
+            from_=self.my_number,
+            timeout=20,
+            if_machine="Hangup")
 
     def answer(self):
         global pj_current_call
         if not pj_current_call:
             return
+        if self.pre_session_callback:
+            self.pre_session_callback()
         pj_current_call.answer(200)
 
     def hangup(self):
         global pj_current_call
-        if not pj_current_call:
-            return
-        pj_current_call.hangup()
-        pj_current_call = None
+        global pj_outgoing_call
+        if pj_current_call:
+            pj_current_call.hangup()
+            pj_current_call = None
+        if pj_outgoing_call:
+            self.twilio_client.calls.update(pj_outgoing_call.sid,
+                status="completed")
 
     def command_line_loop(self):
         global pj_current_call
@@ -155,8 +172,8 @@ class PjTwilio(object):
 
 # Callback to receive events from Call
 class SipCallCallback(pj.CallCallback):
-    def __init__(self, call=None, on_hangup_callback=None):
-        self.on_hangup_callback = on_hangup_callback
+    def __init__(self, call=None, post_session_callback=None):
+        self.post_session_callback = post_session_callback
         pj.CallCallback.__init__(self, call)
 
     # Notification when call state has changed
@@ -171,8 +188,8 @@ class SipCallCallback(pj.CallCallback):
         if self.call.info().state == pj.CallState.DISCONNECTED:
             pj_outgoing_call = None
             pj_current_call = None
-            if self.on_hangup_callback:
-                self.on_hangup_callback()
+            if self.post_session_callback:
+                self.post_session_callback()
             else:
                 print 'Current call is', pj_current_call
 
@@ -190,9 +207,15 @@ class SipCallCallback(pj.CallCallback):
 
 
 class SipAccountCallback(pj.AccountCallback):
-    def __init__(self, account=None, incoming_call_callback=None, on_hangup_callback=None):
+    def __init__(
+            self,
+            account=None,
+            incoming_call_callback=None,
+            pre_session_callback=None,
+            post_session_callback=None):
         self.incoming_call_callback = incoming_call_callback
-        self.on_hangup_callback = on_hangup_callback
+        self.pre_session_callback = pre_session_callback
+        self.post_session_callback = post_session_callback
         pj.AccountCallback.__init__(self, account)
 
     def on_incoming_call(self, call):
@@ -205,8 +228,10 @@ class SipAccountCallback(pj.AccountCallback):
 
         if pj_outgoing_call:
             pj_current_call = call
-            call_cb = SipCallCallback(call=pj_current_call, on_hangup_callback=self.on_hangup_callback)
+            call_cb = SipCallCallback(call=pj_current_call, post_session_callback=self.post_session_callback)
             pj_current_call.set_callback(call_cb)
+            if self.pre_session_callback:
+                self.pre_session_callback()
             call.answer(200)
             return
 
@@ -218,7 +243,7 @@ class SipAccountCallback(pj.AccountCallback):
 
         pj_current_call = call
 
-        call_cb = SipCallCallback(pj_current_call, on_hangup_callback=self.on_hangup_callback)
+        call_cb = SipCallCallback(pj_current_call, post_session_callback=self.post_session_callback)
         pj_current_call.set_callback(call_cb)
 
         pj_current_call.answer(180)
