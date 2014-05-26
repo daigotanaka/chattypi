@@ -125,7 +125,7 @@ class Application(object):
         self.listener_thread = None
 
         self._sphinx = None
-        os.system(self.default_path + "/bin/killps")
+        self.kill_sphinx()
 
         if config.get("system")["have_gps"]:
             self.gps = gps(mode=WATCH_ENABLE)
@@ -164,6 +164,12 @@ class Application(object):
         return (
             "pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
+
+    def kill_sphinx(self):
+        os.system(self.default_path + "/bin/killps")
+        if self._sphinx:
+            self._sphinx = None
+        self.logger.debug("Terminated Sphinx")
 
     def import_plugins(self):
         path, file = os.path.split(os.path.realpath(__file__))
@@ -237,8 +243,7 @@ class Application(object):
         self.listener_thread.join(1.0)
         if self.listener_thread.is_alive():
             self.listener_thread._Thread__stop()
-        self.sphinx.kill()
-        self.logger.debug("Terminated Sphinx")
+        self.kill_sphinx()
         return
 
     def execute_order(self, text):
