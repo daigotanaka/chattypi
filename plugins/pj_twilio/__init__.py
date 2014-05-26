@@ -35,6 +35,8 @@ def register(app):
 
     app.register_command(["answer the phone", "take the call"], "pj_take_call", pj_twilio_plugin.take_call)
     app.register_command(["make a phone call to"], "pj_make_call", pj_twilio_plugin.make_call)
+    # Because voice recognition is off during the call, the hang up command only works thru xmpp!
+    app.register_command(["hang up"], "pj_make_call", pj_twilio_plugin.hang_up)
 
 class PjTwilioPlugin(Plugin):
     def __init__(self, app):
@@ -55,7 +57,7 @@ class PjTwilioPlugin(Plugin):
             twilio_auth_token,
             twiml_url,
             incoming_call_callback=self.incoming_call_callback)
-        self.pj_twilio.on_hangup_callback = self.on_hangup
+        self.pj_twilio.on_hangup_callback = self.on_hangup_callback
         self.pj_twilio.start()
 
         super(PjTwilioPlugin, self).__init__(app)
@@ -77,6 +79,13 @@ class PjTwilioPlugin(Plugin):
         self.app.mute()
         self.pj_twilio.make_twilio_call(to_)
 
+    def take_call(self):
+        self.app.mute()
+        self.pj_twilio.answer()
+
+    def hang_up(self):
+        self.pj_twilio.hangup()
+
     def incoming_call_callback(self, from_):
         r = re.match(r".*sip:[+]*(\w+)@", from_)
         caller = r.group(1)
@@ -90,9 +99,5 @@ class PjTwilioPlugin(Plugin):
             pass
         self.app.say("Call from %s" % caller)
 
-    def take_call(self):
-        self.app.mute()
-        self.pj_twilio.answer()
-
-    def on_hangup(self):
+    def on_hangup_callback(self):
         self.app.unmute()
