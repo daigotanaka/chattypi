@@ -21,6 +21,7 @@
 # THE SOFTWARE.
 
 import datetime
+import re
 import pj_twilio
 
 from plugins import Plugin
@@ -62,7 +63,17 @@ class PjTwilioPlugin(Plugin):
         self.pj_twilio.make_twilio_call(to_number)
 
     def incoming_call_callback(self, from_):
-        self.app.say("Call from %s" % from_)
+        r = re.match(r".*sip:[+]*(\w+)@", from_)
+        caller = r.group(1)
+
+        try:
+            int(caller)
+            head = caller[:-10] if len(caller) > 10 else ""
+            caller = (head + "-" + caller[-10:-7] + "-" + caller[-7:-4] + "-" +
+                caller[-4:])
+        except ValueError:
+            pass
+        self.app.say("Call from %s" % caller)
 
     def take_call(self):
         self.app.kill_sphinx()
