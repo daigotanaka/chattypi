@@ -72,7 +72,7 @@ class Application(object):
         self.data_path = os.path.join(
             self.default_path,
             config.get("system")["data_dir"])
-        self.greeted = False
+        self.ready = False
         self.exist_now = False
         self.nickname = config.get("computer_nickname")
         self.user_nickname = config.get("user_nickname")
@@ -238,16 +238,8 @@ class Application(object):
 
     def loop(self):
         while not self.exit_now:
-            current_time = int(time.time())
-            for interval in self.periodic_tasks.keys():
-                if current_time % int(interval) > 0:
-                    continue
-                for task in self.periodic_tasks[interval]:
-                    try:
-                        task()
-                    except Exception, e:
-                        self.logger.exception(e)
-
+            if self.ready:
+                self.execute_periodic_tasks()
             message = self.get_one_message(wait=False)
             if not message:
                 continue
@@ -264,6 +256,17 @@ class Application(object):
             self.listener_thread._Thread__stop()
         self.kill_sphinx()
         return
+
+    def execute_periodic_tasks(self):
+        current_time = int(time.time())
+        for interval in self.periodic_tasks.keys():
+            if current_time % int(interval) > 0:
+                continue
+            for task in self.periodic_tasks[interval]:
+                try:
+                    task()
+                except Exception, e:
+                    self.logger.exception(e)
 
     def execute_order(self, text):
         nickname = CommandNickname().select().where(
@@ -422,8 +425,8 @@ class Application(object):
             if self.on_mute:
                 continue
             output = self.sphinx.stdout.readline()
-            if "READY" in output and not self.greeted:
-                self.greeted = True
+            if "READY" in output and not self.ready:
+                self.ready = True
                 self.play_sound("sound/voice_command_ready.mp3")
 
             m = re.search(r"\d{9}: .*", output)
