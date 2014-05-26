@@ -165,6 +165,13 @@ class Application(object):
             "pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
 
+    def mute(self):
+        self.on_mute = True
+        self.kill_sphinx()
+
+    def unmute(self):
+        self.on_mute = False
+
     def kill_sphinx(self):
         os.system(self.default_path + "/bin/killps")
         if self._sphinx:
@@ -400,9 +407,9 @@ class Application(object):
     def listen(self):
         self.on_mute = False
         while not self.exit_now:
-            output = self.sphinx.stdout.readline()
             if self.on_mute:
                 continue
+            output = self.sphinx.stdout.readline()
             if "READY" in output and not self.greeted:
                 self.greeted = True
                 self.play_sound("sound/voice_command_ready.mp3")

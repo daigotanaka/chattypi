@@ -34,6 +34,7 @@ def register(app):
     pj_twilio_plugin = PjTwilioPlugin(app)
 
     app.register_command(["answer the phone", "take the call"], "pj_take_call", pj_twilio_plugin.take_call)
+    app.register_command(["make a phone call to"], "pj_make_call", pj_twilio_plugin.make_call)
 
 class PjTwilioPlugin(Plugin):
     def __init__(self, app):
@@ -54,13 +55,21 @@ class PjTwilioPlugin(Plugin):
             twilio_auth_token,
             twiml_url,
             incoming_call_callback=self.incoming_call_callback)
+        self.pj_twilio.on_hangup_callback = self.on_hangup
         self.pj_twilio.start()
 
         super(PjTwilioPlugin, self).__init__(app)
 
-    def make_call(self, to_number):
-        self.app.kill_sphinx()
-        self.pj_twilio.make_twilio_call(to_number)
+    def make_call(self, param):
+        nickname = param
+        to_ = self.app.addressbook.get_primary_phone(nickname.lower())
+        if not to_:
+            self.app.say("Sorry, I cannot find the contact")
+            return
+        self.app.logger.debug(to_)
+
+        self.app.mute()
+        self.pj_twilio.make_twilio_call(to_)
 
     def incoming_call_callback(self, from_):
         r = re.match(r".*sip:[+]*(\w+)@", from_)
@@ -76,5 +85,8 @@ class PjTwilioPlugin(Plugin):
         self.app.say("Call from %s" % caller)
 
     def take_call(self):
-        self.app.kill_sphinx()
+        self.app.mute()
         self.pj_twilio.answer()
+
+    def on_hangup(self):
+        self.app.unmute()

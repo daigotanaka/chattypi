@@ -19,7 +19,8 @@ class PjTwilio(object):
             twilio_account_sid,
             twilio_auth_token,
             twilml_url,
-            incoming_call_callback=None):
+            incoming_call_callback=None,
+            on_hangup_callback=None):
         self.my_number = my_number
         self.sip_domain = sip_domain
         self.sip_username = sip_username
@@ -28,6 +29,7 @@ class PjTwilio(object):
         self.twilio_auth_token = twilio_auth_token
         self.twilml_url = twilml_url
         self.incoming_call_callback = incoming_call_callback
+        self.on_hangup_callback = on_hangup_callback
 
         self.pj_outgoing_call = None
         self.pj_current_call = None
@@ -65,7 +67,10 @@ class PjTwilio(object):
             username=self.sip_username,
             passwd=self.sip_password,
         )]
-        acc_cb = SipAccountCallback(acc_in_cfg, self.incoming_call_callback)
+        acc_cb = SipAccountCallback(
+            acc_in_cfg,
+            self.incoming_call_callback,
+            self.on_hangup_callback)
         self.acc_in = pj_lib.create_account(acc_in_cfg, cb=acc_cb)
 
     def terminate(self):
@@ -82,7 +87,7 @@ class PjTwilio(object):
         global pj_current_call
         try:
             print "Making call to", uri
-            pj_current_call = acc.make_call(uri, cb=SipCallCallback())
+            pj_current_call = acc.make_call(uri, cb=SipCallCallback(on_hangup_callback=self.on_hangup_callback))
         except pj.Error, e:
             print "Exception: " + str(e)
             return None
@@ -150,7 +155,8 @@ class PjTwilio(object):
 
 # Callback to receive events from Call
 class SipCallCallback(pj.CallCallback):
-    def __init__(self, call=None):
+    def __init__(self, call=None, on_hangup_callback=None):
+        self.on_hangup_callback = on_hangup_callback
         pj.CallCallback.__init__(self, call)
 
     # Notification when call state has changed
@@ -165,7 +171,10 @@ class SipCallCallback(pj.CallCallback):
         if self.call.info().state == pj.CallState.DISCONNECTED:
             pj_outgoing_call = None
             pj_current_call = None
-            print 'Current call is', pj_current_call
+            if self.on_hangup_callback:
+                self.on_hangup_callback()
+            else:
+                print 'Current call is', pj_current_call
 
     # Notification when call's media state has changed.
     def on_media_state(self):
@@ -181,8 +190,9 @@ class SipCallCallback(pj.CallCallback):
 
 
 class SipAccountCallback(pj.AccountCallback):
-    def __init__(self, account=None, incoming_call_callback=None):
+    def __init__(self, account=None, incoming_call_callback=None, on_hangup_callback=None):
         self.incoming_call_callback = incoming_call_callback
+        self.on_hangup_callback = on_hangup_callback
         pj.AccountCallback.__init__(self, account)
 
     def on_incoming_call(self, call):
@@ -195,7 +205,7 @@ class SipAccountCallback(pj.AccountCallback):
 
         if pj_outgoing_call:
             pj_current_call = call
-            call_cb = SipCallCallback(pj_current_call)
+            call_cb = SipCallCallback(call=pj_current_call, on_hangup_callback=self.on_hangup_callback)
             pj_current_call.set_callback(call_cb)
             call.answer(200)
             return
@@ -208,7 +218,7 @@ class SipAccountCallback(pj.AccountCallback):
 
         pj_current_call = call
 
-        call_cb = SipCallCallback(pj_current_call)
+        call_cb = SipCallCallback(pj_current_call, on_hangup_callback=self.on_hangup_callback)
         pj_current_call.set_callback(call_cb)
 
         pj_current_call.answer(180)
