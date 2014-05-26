@@ -76,8 +76,7 @@ class TwitterPlugin(Plugin):
 
         sentences = []
         for status in statuses:
-            text = status["text"] + " "
-            text = re.sub("http:\/\/.* ", "", text)
+            text = self.app.cut_link(status["text"])
             # Twitter returns GMT time in the format like this:
             # Mon Sep 16 06:57:38 +0000 2013
             # Python 2.x does not support %z, so converting to "GMT"

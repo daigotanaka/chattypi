@@ -104,6 +104,7 @@ class GoogleTalkPlugin(Plugin):
                 text = nickname + " says: " + message
             else:
                 text = message
+            text = self.app.cut_link(text, "[link]")
             self.app.say(text, corpus=True)
             # Don't update last_from if it is a command
             self.last_from = from_

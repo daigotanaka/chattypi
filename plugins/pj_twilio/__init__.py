@@ -61,8 +61,13 @@ class PjTwilioPlugin(Plugin):
         super(PjTwilioPlugin, self).__init__(app)
 
     def make_call(self, param):
-        nickname = param
-        to_ = self.app.addressbook.get_primary_phone(nickname.lower())
+        try:
+            int(param.replace("-", "").replace("+", ""))
+            to_ = param
+        except:
+            nickname = param
+            to_ = self.app.addressbook.get_primary_phone(nickname.lower())
+
         if not to_:
             self.app.say("Sorry, I cannot find the contact")
             return

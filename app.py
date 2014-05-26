@@ -93,6 +93,8 @@ class Application(object):
         self.inet_check_attempts = 0
         self.exit_now = False
 
+        self.links = []
+
         self.audio_in_device = str(config.get("audio")["in_device"])
 
         connect_db()
@@ -164,6 +166,16 @@ class Application(object):
         return (
             "pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
+
+    def cut_link(self, text, replace=""):
+        text = text + " "
+        for item in re.findall(r"(http[s]*:\/\/[^\s]+)", text):
+            self.links.append(item)
+        text = re.sub(r"http[s]*:\/\/[^\s]+", replace, text)
+        return text
+
+    def pop_link(self):
+        return self.links.pop() if self.links else None
 
     def mute(self):
         self.on_mute = True
