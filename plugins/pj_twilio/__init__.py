@@ -68,6 +68,7 @@ class PjTwilioPlugin(Plugin):
             return
         self.app.logger.debug(to_)
 
+        self.app.say("Calling %s" % param)
         self.app.mute()
         self.pj_twilio.make_twilio_call(to_)
 
