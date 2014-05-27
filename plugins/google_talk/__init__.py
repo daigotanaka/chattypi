@@ -91,6 +91,8 @@ class GoogleTalkPlugin(Plugin):
         message = message_node.getBody() or message_node.getSubject()
         if not message:
             return
+        while not self.app.ready:
+            continue
         message = message.encode('utf-8').lower().strip()
         self.current_connection = connect_object
         if self.app.nickname + ":" == message[0:len(self.app.nickname) + 1]:

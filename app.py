@@ -358,6 +358,15 @@ class Application(object):
     def unmute(self):
         self.on_mute = False
 
+    def go_to_sleep(self):
+        self.say("Bye for now")
+        self.on_mute = True
+        self._kill_sphinx()
+        time.sleep(5)  # Allow user to mute the mic
+        self.on_mute = False
+        self.logger.debug("Zzz...")
+        self.ready = False
+
     def get_ip(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -447,8 +456,8 @@ class Application(object):
                 continue
             output = self.sphinx.stdout.readline()
             if "READY" in output and not self.ready:
-                self.ready = True
                 self.play_sound("sound/voice_command_ready.mp3")
+                self.ready = True
 
             m = re.search(r"\d{9}: .*", output)
             if m:

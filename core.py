@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,6 +35,7 @@ class CoreCommands(object):
             "reboot": ("reboot", self.reboot),
             "shut down": ("shut down", self.shutdown),
             "shutdown": ("shut down", self.shutdown),
+            "go to sleep": ("go to sleep", self.go_to_sleep),
             "switch audio": ("switch audio", self.switch_audio),
             "what is local ip": ("local ip", self.local_ip),
             "status report": ("status report", self.status_report),
@@ -67,12 +68,15 @@ class CoreCommands(object):
         self.app.play_sound("sound/rebooting.mp3")
         self.app.clean_files()
         os.system("sudo reboot")
- 
+
     def shutdown(self):
         self.app.logger.info("%s: Shutting down..." % self.app.nickname)
         self.app.play_sound("sound/shutting_down.mp3")
         self.app.clean_files()
         os.system("sudo shutdown -h now")
+
+    def go_to_sleep(self):
+        self.app.go_to_sleep()
 
     def switch_audio(self):
         self.app.config.get("audio")["out_device"] = 0 if self.app.config.get("audio")["out_device"] == 1 else 1
