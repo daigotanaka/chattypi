@@ -130,6 +130,7 @@ class PjTwilio(object):
         if pj_outgoing_call:
             self.twilio_client.calls.update(pj_outgoing_call.sid,
                 status="completed")
+            pj_outgoing_call = None
 
     def command_line_loop(self):
         global pj_current_call

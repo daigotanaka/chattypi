@@ -37,6 +37,8 @@ def register(app):
     app.register_command(["make a phone call to"], "pj_make_call", pj_twilio_plugin.make_call)
     # Because voice recognition is off during the call, the hang up command only works thru xmpp!
     app.register_command(["hang up"], "pj_hang_up", pj_twilio_plugin.hang_up)
+    app.register_command(["redial"], "pj_redial", pj_twilio_plugin.redial)
+    app.register_command(["call back"], "pj_call_back", pj_twilio_plugin.call_back)
 
 class PjTwilioPlugin(Plugin):
     def __init__(self, app):
@@ -47,6 +49,9 @@ class PjTwilioPlugin(Plugin):
         twilio_account_sid = app.config.get("pj_twilio")["twilio_account_sid"]
         twilio_auth_token = app.config.get("pj_twilio")["twilio_auth_token"]
         twiml_url = app.config.get("pj_twilio")["twilml_url"]
+
+        self.redial_number = None
+        self.call_back_number = None
 
         self.pj_twilio = PjTwilio(
             my_number,
@@ -64,20 +69,29 @@ class PjTwilioPlugin(Plugin):
         super(PjTwilioPlugin, self).__init__(app)
 
     def make_call(self, param):
-        try:
-            int(param.replace("-", "").replace("+", ""))
+        if not "@" in param:
+            try:
+                int(param.replace("-", "").replace("+", ""))
+                to_ = param
+            except:
+                nickname = param
+                to_ = self.app.addressbook.get_primary_phone(nickname.lower())
+
+            if not to_:
+                self.app.say("Sorry, I cannot find the contact")
+                return
+            self.app.logger.debug(to_)
+            self.app.say("Calling %s" % param)
+        else:
             to_ = param
-        except:
-            nickname = param
-            to_ = self.app.addressbook.get_primary_phone(nickname.lower())
+            self.app.say("Calling a SIP contact")
 
-        if not to_:
-            self.app.say("Sorry, I cannot find the contact")
-            return
-        self.app.logger.debug(to_)
+        self.redial_number = to_
 
-        self.app.say("Calling %s" % param)
-        self.pj_twilio.make_twilio_call(to_)
+        if "@" in to_:
+            self.pj_twilio_make_call(to_)
+        else:
+            self.pj_twilio.make_twilio_call(to_)
 
     def take_call(self):
         self.pj_twilio.answer()
@@ -85,18 +99,32 @@ class PjTwilioPlugin(Plugin):
     def hang_up(self):
         self.pj_twilio.hangup()
 
+    def redial(self):
+        if not self.redial_number:
+            self.app.say("No redial number")
+            return
+        self.make_call(self.redial_number)
+
+    def call_back(self):
+        if not self.call_back_number:
+            self.app.say("No call back number")
+            return
+        self.make_call(self.call_back_number)
+
     def incoming_call_callback(self, from_):
-        r = re.match(r".*sip:[+]*(\w+)@", from_)
+        number = None
+        r = re.search(r"sip:[+]*(\w+)@", from_)
         caller = r.group(1)
 
         try:
             int(caller)
             head = caller[:-10] if len(caller) > 10 else ""
-            caller = (head + "-" + caller[-10:-7] + "-" + caller[-7:-4] + "-" +
+            number = (head + "-" + caller[-10:-7] + "-" + caller[-7:-4] + "-" +
                 caller[-4:])
         except ValueError:
             pass
-        self.app.say("Call from %s" % caller)
+        self.app.say("Call from %s" % (number or caller))
+        self.call_back_number = caller if number else from_
 
     def pre_session_callback(self):
         self.app.mute()
