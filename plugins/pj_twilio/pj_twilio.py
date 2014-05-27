@@ -240,18 +240,18 @@ class SipAccountCallback(pj.AccountCallback):
             call.answer(200)
             return
 
-        if self.incoming_call_callback:
-            self.incoming_call_callback(call.info().remote_uri)
-        else:
-            print "Incoming call from ", call.info().remote_uri
-            print "Press 'a' to answer"
-
         pj_current_call = call
 
         call_cb = SipCallCallback(pj_current_call, post_session_callback=self.post_session_callback)
         pj_current_call.set_callback(call_cb)
 
         pj_current_call.answer(180)
+
+        if self.incoming_call_callback:
+            self.incoming_call_callback(call.info().remote_uri)
+        else:
+            print "Incoming call from ", call.info().remote_uri
+            print "Press 'a' to answer"
 
     def on_reg_state(self):
         print "Registration complete, status=", self.account.info().reg_status, \
