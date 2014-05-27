@@ -21,7 +21,8 @@ class PjTwilio(object):
             twilml_url,
             incoming_call_callback=None,
             pre_session_callback=None,
-            post_session_callback=None):
+            post_session_callback=None,
+            error_callback=None):
         self.my_number = my_number
         self.sip_domain = sip_domain
         self.sip_username = sip_username
@@ -32,6 +33,7 @@ class PjTwilio(object):
         self.incoming_call_callback = incoming_call_callback
         self.pre_session_callback = pre_session_callback
         self.post_session_callback = post_session_callback
+        self.error_callback = error_callback
 
         self.pj_outgoing_call = None
         self.pj_current_call = None
@@ -116,6 +118,8 @@ class PjTwilio(object):
     def answer(self):
         global pj_current_call
         if not pj_current_call:
+            if self.error_callback:
+                self.error_callback("No one is calling")
             return
         if self.pre_session_callback:
             self.pre_session_callback()

@@ -63,7 +63,8 @@ class PjTwilioPlugin(Plugin):
             twiml_url,
             incoming_call_callback=self.incoming_call_callback,
             pre_session_callback = self.pre_session_callback,
-            post_session_callback = self.post_session_callback)
+            post_session_callback = self.post_session_callback,
+            error_callback = self.error_callback)
         self.pj_twilio.start()
 
         super(PjTwilioPlugin, self).__init__(app)
@@ -131,3 +132,6 @@ class PjTwilioPlugin(Plugin):
 
     def post_session_callback(self):
         self.app.unmute()
+
+    def error_callback(self, message):
+        self.app.say(message)
