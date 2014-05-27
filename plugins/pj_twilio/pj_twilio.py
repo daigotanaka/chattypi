@@ -72,36 +72,36 @@ class PjTwilio(object):
         transport_out = pj_lib.create_transport(pj.TransportType.UDP, pj.TransportConfig(0))
 
         pj_lib.start()
-        acc_in_cfg = pj.AccountConfig()
-        acc_in_cfg.id = "sip:%s@%s" % (self.sip_username, self.sip_domain)
-        acc_in_cfg.reg_uri = "sip:%s;transport=tls" % self.sip_domain
-        acc_in_cfg.auth_cred = [pj.AuthCred(
+        account_cfg = pj.AccountConfig()
+        account_cfg.id = "sip:%s@%s" % (self.sip_username, self.sip_domain)
+        account_cfg.reg_uri = "sip:%s;transport=tls" % self.sip_domain
+        account_cfg.auth_cred = [pj.AuthCred(
             realm=self.sip_domain,
             username=self.sip_username,
             passwd=self.sip_password,
         )]
         acc_cb = SipAccountCallback(
-            acc_in_cfg,
+            account_cfg,
             self.incoming_call_callback,
             self.pre_session_callback,
             self.post_session_callback)
-        self.acc_in = pj_lib.create_account(acc_in_cfg, cb=acc_cb)
+        self.account = pj_lib.create_account(account_cfg, cb=acc_cb)
 
     def terminate(self):
         global pj_lib
         self.transport_in = None
         self.transport_out = None
-        self.acc_in.delete()
-        self.acc_in = None
+        self.account.delete()
+        self.account = None
         pj_lib.destroy()
         pj_lib = None
 
-    def make_sip_call(self, acc, uri):
+    def make_sip_call(self, uri):
         """Function to make call"""
         global pj_current_call
         try:
             print "Making call to", uri
-            pj_current_call = acc.make_call(uri, cb=SipCallCallback(post_session_callback=self.post_session_callback))
+            pj_current_call = self.account.make_call(uri, cb=SipCallCallback(post_session_callback=self.post_session_callback))
         except pj.Error, e:
             print "Exception: " + str(e)
             return None
@@ -154,7 +154,7 @@ class PjTwilio(object):
                 if input == "":
                     continue
                 # lck = lib.auto_lock()
-                # pj_current_call = make_call(acc_out, input)
+                # pj_current_call = make_sip_call(acc_out, input)
                 # del lck
                 self.make_twilio_call(to_number)
 

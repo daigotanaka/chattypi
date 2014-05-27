@@ -90,7 +90,8 @@ class PjTwilioPlugin(Plugin):
         self.redial_number = to_
 
         if "@" in to_:
-            self.pj_twilio_make_call(to_)
+            self.app.mute()
+            self.pj_twilio.make_sip_call("sip:" + to_)
         else:
             self.pj_twilio.make_twilio_call(to_)
 

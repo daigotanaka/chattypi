@@ -290,7 +290,6 @@ class Application(object):
             message = self.messages.get(wait)
         except Queue.Empty:
             pass
-        message = re.sub(r"[^\w]", " ", message)
         return message.lower().strip()
 
     def confirm(self, message=None):
@@ -462,6 +461,7 @@ class Application(object):
             m = re.search(r"\d{9}: .*", output)
             if m:
                 message = m.group(0)[11:]
+                message = re.sub(r"[^\w]", " ", message)
                 self.messages.put(message)
 
     def _kill_sphinx(self):
