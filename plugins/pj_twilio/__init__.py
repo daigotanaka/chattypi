@@ -33,7 +33,7 @@ def register(app):
     global pj_twilio_plugin
     pj_twilio_plugin = PjTwilioPlugin(app)
 
-    app.register_command(["answer the phone", "take the call"], "pj_take_call", pj_twilio_plugin.take_call)
+    app.register_command(["answer the phone", "take the call"], "pj_take_call", pj_twilio_plugin.take_call, at_sleep=True)
     app.register_command(["make a phone call to"], "pj_make_call", pj_twilio_plugin.make_call)
     # Because voice recognition is off during the call, the hang up command only works thru xmpp!
     app.register_command(["hang up"], "pj_hang_up", pj_twilio_plugin.hang_up)

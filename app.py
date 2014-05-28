@@ -76,6 +76,7 @@ class Application(object):
         self.inet_check_attempts = 0
         self.is_mic_down = False
         self.ready = False
+        self.sleeping = False
         self.exit_now = False
 
         self.nickname = config.get("computer_nickname")
@@ -114,6 +115,7 @@ class Application(object):
             sample_rate=self.sample_rate)
 
         # Voice command to event dispatch singnal table
+        self.signals_at_sleep = []
         self.command2signal = {}
         self.core = CoreCommands(self)
         self.core.register_commands()
@@ -169,9 +171,13 @@ class Application(object):
             "pulse::" + out_device if config.get("audio")["has_pulse"]
             else "alsa:device=hw=" + out_device + ",0")
 
-    def register_command(self, voice_commands, signal, func):
+    def register_command(self, voice_commands, signal, func, at_sleep=False):
         if type(voice_commands) == str:
             voice_commands = [voice_commands]
+        if at_sleep:
+            self.signals_at_sleep.append(signal)
+            self.logger.debug("Added %s as a valid command while sleeping:" %
+                signal)
         for command in voice_commands:
             if command in self.command2signal:
                 raise Exception(
@@ -205,6 +211,10 @@ class Application(object):
             if not self.is_command(text, command):
                 continue
             sig = self.command2signal[command]
+
+            if self.sleeping and sig not in self.signals_at_sleep:
+                return
+
             if sig not in ["repeat command", "nickname command"]:
                 self.last_command = text
             param = self._get_param(text, command)
@@ -257,7 +267,11 @@ class Application(object):
             self.app.add_corpus(message)
 
     def say(self, text, corpus=False, nowait=False):
-        self.logger.info("%s: %s" % (self.nickname, text))
+        try:
+            self.logger.info("%s: %s" % (self.nickname, text))
+        except Exception, e:
+            self.logger.error(e)
+
         words = text.split(" ")
         index = 0
         cont = True
@@ -357,14 +371,13 @@ class Application(object):
     def unmute(self):
         self.on_mute = False
 
+    def wake_up(self):
+        self.say("Hello again")
+        self.sleeping = False
+
     def go_to_sleep(self):
+        self.sleeping = True
         self.say("Bye for now")
-        self.on_mute = True
-        self._kill_sphinx()
-        time.sleep(5)  # Allow user to mute the mic
-        self.on_mute = False
-        self.logger.debug("Zzz...")
-        self.ready = False
 
     def get_ip(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -379,7 +392,7 @@ class Application(object):
 
     def _loop(self):
         while not self.exit_now:
-            if self.ready:
+            if self.ready and not self.sleeping:
                 self._execute_periodic_tasks()
             message = self.get_one_message(wait=False)
             if not message:

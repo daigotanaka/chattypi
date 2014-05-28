@@ -31,31 +31,32 @@ class CoreCommands(object):
 
     def register_commands(self):
         core_commands = {
-            "exit program": ("exit program", self.exit_program),
-            "reboot": ("reboot", self.reboot),
-            "shut down": ("shut down", self.shutdown),
-            "shutdown": ("shut down", self.shutdown),
-            "go to sleep": ("go to sleep", self.go_to_sleep),
-            "switch audio": ("switch audio", self.switch_audio),
-            "what is local ip": ("local ip", self.local_ip),
-            "status report": ("status report", self.status_report),
-            "status update": ("status report", self.status_report),
-            "turn on": ("turn on", self.turn_on),
-            "switch on": ("turn on", self.turn_on),
-            "turn off": ("turn off", self.turn_off),
-            "switch off": ("turn off", self.turn_off),
-            "previous page": ("screen back", self.screen_back),
-            "next page": ("screen forward", self.screen_forward),
-            "repeat": ("repeat command", self.repeat_command),
-            "repeat the last command": ("repeat command", self.repeat_command),
-            "nickname the last command as": ("nickname command", self.nickname_command),
-            "nickname the last command": ("nickname command", self.nickname_command),
-            "where am i": ("current address", self.current_address)
+            "exit program": ("exit program", self.exit_program, False),
+            "reboot": ("reboot", self.reboot, False),
+            "shut down": ("shut down", self.shutdown, False),
+            "shutdown": ("shut down", self.shutdown, False),
+            "go to sleep": ("go to sleep", self.go_to_sleep, False),
+            "wake up": ("wake up", self.wake_up, True),
+            "switch audio": ("switch audio", self.switch_audio, False),
+            "what is local ip": ("local ip", self.local_ip, False),
+            "status report": ("status report", self.status_report, False),
+            "status update": ("status report", self.status_report, False),
+            "turn on": ("turn on", self.turn_on, False),
+            "switch on": ("turn on", self.turn_on, False),
+            "turn off": ("turn off", self.turn_off, False),
+            "switch off": ("turn off", self.turn_off, False),
+            "previous page": ("screen back", self.screen_back, False),
+            "next page": ("screen forward", self.screen_forward, False),
+            "repeat": ("repeat command", self.repeat_command, False),
+            "repeat the last command": ("repeat command", self.repeat_command, False),
+            "nickname the last command as": ("nickname command", self.nickname_command, False),
+            "nickname the last command": ("nickname command", self.nickname_command, False),
+            "where am i": ("current address", self.current_address, False)
         }
 
         for command in core_commands:
-            sig, func = core_commands[command]
-            self.app.register_command([command], sig, func)
+            sig, func, at_sleep = core_commands[command]
+            self.app.register_command([command], sig, func, at_sleep)
 
     def exit_program(self):
         self.app.logger.info("%s: Voice command off" % self.app.nickname)
@@ -74,6 +75,9 @@ class CoreCommands(object):
         self.app.play_sound("sound/shutting_down.mp3")
         self.app.clean_files()
         os.system("sudo shutdown -h now")
+
+    def wake_up(self):
+        self.app.wake_up()
 
     def go_to_sleep(self):
         self.app.go_to_sleep()
