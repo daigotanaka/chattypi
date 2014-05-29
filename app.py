@@ -20,12 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from config import config
-from gps import gps, WATCH_ENABLE
-from multiprocessing import Process
-from pydispatch import dispatcher
-from threading import Thread
-
+import datetime
 import logging
 import os
 import Queue
@@ -37,6 +32,12 @@ import subprocess
 import time
 import urllib
 import urllib2
+
+from config import config
+from gps import gps, WATCH_ENABLE
+from multiprocessing import Process
+from pydispatch import dispatcher
+from threading import Thread
 
 from addressbook import AddressBook
 from core import CoreCommands
@@ -131,6 +132,8 @@ class Application(object):
 
         self.listener_thread = None
 
+        self.sphinx_timeout = config.get("sphinx")["timeout_sec"]
+        self.listening_since = None
         self._sphinx = None
         self._kill_sphinx()
 
@@ -428,6 +431,14 @@ class Application(object):
         while not self.exit_now:
             if self.ready and not self.sleeping:
                 self._execute_periodic_tasks()
+            if (self.listening_since and
+                    time.time() - self.listening_since >
+                    self.sphinx_timeout):
+                self.logger.debug("Sphinx timeout")
+                self.listening_since = None
+                self._kill_sphinx()
+                continue
+
             message = self.get_one_message(wait=False)
             if not message:
                 continue
@@ -501,14 +512,24 @@ class Application(object):
             if self.on_mute:
                 continue
             output = self.sphinx.stdout.readline()
+            # self.logger.debug(output)
             if "READY" in output and not self.ready:
                 self.play_sound("sound/voice_command_ready.mp3")
                 self.ready = True
+            if "Listening..." in output:
+                self.logger.debug(
+                    "Started to listen at %s" % datetime.datetime.now())
+                self.listening_since = time.time()
 
             m = re.search(r"\d{9}: .*", output)
             if m:
                 message = m.group(0)[11:]
                 message = re.sub(r"[^\w]", " ", message)
+                duration = 0
+                if self.listening_since:
+                    duration = time.time() - self.listening_since
+                self.logger.debug("Listened for %d seconds" % int(duration))
+                self.listening_since = None
                 self.messages.put(message)
 
     def _kill_sphinx(self):

@@ -78,6 +78,7 @@ keyword_corpus_file = string(max=1024, default="keyword_corpus.txt")
 combined_corpus_file = string(max=1024, default="combined_corpus.txt")
 dict_file = string(max=1024, default="sphinx.dict")
 lm_file = string(max=1024, default="sphinx.lm")
+timeout_sec = integer(10, 255, default=30)
 
 [addressbook]
 file = string(max=1024, default="data/addressbook.csv")
