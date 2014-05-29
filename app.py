@@ -122,6 +122,7 @@ class Application(object):
         all_commands = ""
         for key in self.command2signal.keys():
             all_commands += self.nickname + " " + key + "\n"
+        all_commands += self.nickname + " stop\n"
         for name in self.addressbook.book.keys():
             all_commands += name + "\n"
         corpus_file = os.path.join(self.data_path, "keyword_corpus.txt")
