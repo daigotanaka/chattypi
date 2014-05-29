@@ -124,7 +124,9 @@ class Application(object):
         all_commands = ""
         for key in self.command2signal.keys():
             all_commands += self.nickname + " " + key + "\n"
-        corpus_file = os.path.join(self.data_path, "command_corpus.txt")
+        for name in self.addressbook.book.keys():
+            all_commands += name + "\n"
+        corpus_file = os.path.join(self.data_path, "keyword_corpus.txt")
         with open(corpus_file, "w") as f:
             f.write(all_commands)
 

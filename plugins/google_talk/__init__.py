@@ -52,7 +52,8 @@ class GoogleTalkPlugin(Plugin):
         while not self.app.exit_now:
             try:
                 self.loop()
-            except AttributeError:
+            except AttributeError, e:
+                print e
                 self.app.logger.debug("Attribute error. Recovering xmpp connection")
                 pass
 
