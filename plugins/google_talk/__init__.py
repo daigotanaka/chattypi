@@ -90,9 +90,9 @@ class GoogleTalkPlugin(Plugin):
         nickname = str(from_)
         nickname = nickname[0:nickname.find("@")]
         message = message_node.getBody() or message_node.getSubject()
-        message = message.encode('utf-8').lower().strip()
         if not message:
             return
+        message = message.encode('utf-8').lower().strip()
         while not self.app.ready:
             continue
         self.current_connection = connect_object

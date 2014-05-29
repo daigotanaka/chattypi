@@ -35,8 +35,10 @@ class CoreCommands(object):
             "reboot": ("reboot", self.reboot, False),
             "shut down": ("shut down", self.shutdown, False),
             "shutdown": ("shut down", self.shutdown, False),
-            "go to sleep": ("go to sleep", self.go_to_sleep, False),
-            "wake up": ("wake up", self.wake_up, True),
+            "go to sleep": ("go to sleep", self.app.go_to_sleep, False),
+            "wake up": ("wake up", self.app.wake_up, True),
+            "update corpus": ("update corpus", self.app.update_corpus, True),
+            "learn new words": ("update corpus", self.app.update_corpus, True),
             "switch audio": ("switch audio", self.switch_audio, False),
             "what is local ip": ("local ip", self.local_ip, False),
             "status report": ("status report", self.status_report, False),
@@ -75,12 +77,6 @@ class CoreCommands(object):
         self.app.play_sound("sound/shutting_down.mp3")
         self.app.clean_files()
         os.system("sudo shutdown -h now")
-
-    def wake_up(self):
-        self.app.wake_up()
-
-    def go_to_sleep(self):
-        self.app.go_to_sleep()
 
     def switch_audio(self):
         self.app.config.get("audio")["out_device"] = 0 if self.app.config.get("audio")["out_device"] == 1 else 1

@@ -1,5 +1,5 @@
-cat /home/pi/chattypi/data/corpus.txt | sort | awk '!x[$0]++' > /home/pi/chattypi/data/corpus_sorted.txt
-mv /home/pi/chattypi/data/corpus_sorted.txt /home/pi/chattypi/data/corpus.txt
-cat /home/pi/chattypi/data/keyword_corpus.txt > /home/pi/chattypi/data/corpus_final.txt
-cat /home/pi/chattypi/data/corpus.txt >> /home/pi/chattypi/data/corpus_final.txt
-/home/pi/chattypi/cp-venv/bin/python /home/pi/chattypi/update_corpus.py
+cat $2 | sort | awk '!x[$0]++' > $2_sorted
+mv $2_sorted $2
+cat $3 > $4
+cat $2 >> $4
+$1/cp-venv/bin/python $1/update_corpus.py $4 $5 $6

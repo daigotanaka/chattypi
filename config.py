@@ -73,7 +73,11 @@ data_dir = string(max=256, default="data")
 have_gps = boolean(default=False)
 
 [sphinx]
-corpus_file = string(max=1024, default="data/corpus.txt")
+corpus_file = string(max=1024, default="corpus.txt")
+keyword_corpus_file = string(max=1024, default="keyword_corpus.txt")
+combined_corpus_file = string(max=1024, default="combined_corpus.txt")
+dict_file = string(max=1024, default="sphinx.dict")
+lm_file = string(max=1024, default="sphinx.lm")
 
 [addressbook]
 file = string(max=1024, default="data/addressbook.csv")

@@ -45,7 +45,6 @@ from models import connect_db, CommandNickname
 from speech2text import Speech2Text
 
 import libs
-# import update_corpus
 
 
 class Application(object):
@@ -148,13 +147,20 @@ class Application(object):
                 self.record_once()
                 vol = self._get_volume()
             self.logger.debug("Restarting sphinx")
-            os.system(self.default_path + "/bin/killps")
-            cmd = (
-                "pocketsphinx_continuous -lm " +
-                self.default_path +
-                "/data/sample.lm -dict " +
-                self.default_path +
-                "/data/sample.dic")
+            os.system(os.path.join(self.default_path, "bin/killps"))
+            args = (
+                "pocketsphinx_continuous",
+                "-lm",
+                os.path.join(
+                    self.data_path,
+                    self.config.get("sphinx")["lm_file"]),
+                "-dict",
+                os.path.join(
+                    self.data_path,
+                    self.config.get("sphinx")["dict_file"])
+            )
+            cmd = " ".join(args)
+            print cmd
             self._sphinx = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -218,6 +224,7 @@ class Application(object):
             param = self._get_param(text, command)
             self.logger.debug("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
+            self.play_sound("sound/ok.wav")
             dispatcher.send(signal=sig, **kwargs)
             break
         else:
@@ -344,12 +351,43 @@ class Application(object):
         self.play_sound("sound/sorry.mp3")
         return None
 
+    def update_corpus(self):
+        self.say("Updating")
+        self.on_mute = True
+        self._kill_sphinx()
+        args = [
+            os.path.join(self.default_path, "bin/updatecorpus"),
+            self.default_path,
+            os.path.join(
+                self.data_path,
+                self.config.get("sphinx")["corpus_file"]),
+            os.path.join(
+                self.data_path,
+                self.config.get("sphinx")["keyword_corpus_file"]),
+            os.path.join(
+                self.data_path,
+                self.config.get("sphinx")["combined_corpus_file"]),
+            os.path.join(
+                self.data_path,
+                self.config.get("sphinx")["dict_file"]),
+            os.path.join(
+                self.data_path,
+                self.config.get("sphinx")["lm_file"])
+        ]
+        cmd = " ".join(args)
+        os.system(" ".join(args))
+        self.on_mute = False
+        self.say("Updated vocabulary")
+
     def add_corpus(self, text):
         self.logger.debug("Adding corpus: " + text)
         if not text:
             return
         text = re.sub(r"[^\w]", " ", text).strip()
-        with open(self.config.get("sphinx")["corpus_file"], "a") as f:
+        corpus_file = os.path.join(
+            self.data_path,
+            self.config.get("sphinx")["corpus_file"])
+        with open(corpus_file, "a") as f:
             f.write(text + "\n")
 
     def cut_link(self, text, replace=""):

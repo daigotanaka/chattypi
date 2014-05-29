@@ -1,6 +1,3 @@
 export LD_LIBRARY_PATH=/usr/local/lib
-cat /home/pi/chattypi/data/command_corpus.txt > /home/pi/chattypi/data/corpus_final.txt
-cat /home/pi/chattypi/data/corpus.txt >> /home/pi/chattypi/data/corpus_final.txt
-/home/pi/chattypi/cp-venv/bin/python /home/pi/chattypi/update_corpus.py
 killall pocketsphinx_continuous 
-/home/pi/chattypi/cp-venv/bin/python /home/pi/chattypi/app.py
+`pwd`/cp-venv/bin/python `pwd`/app.py
