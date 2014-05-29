@@ -344,7 +344,7 @@ class Application(object):
             self.nickname +
             ": Sorry, I could not catch that. Please try again.")
         self.play_sound("sound/try_again.mp3")
-        content = self.get_one_message(duration=duration)
+        content = self.get_one_message()
         self.logger.debug(content)
         if content:
             return content
