@@ -80,7 +80,7 @@ class TwilioPlugin(Plugin):
         self.app.play_sound("sound/message_sent.mp3")
 
     def read_out_sms(self):
-        check_sms(quiet=False, repeat=True)
+        self.check_sms(quiet=False, repeat=True)
 
     def check_sms(self, quiet=True, repeat=False):
         messages = self.twilio.fetch_received()

@@ -57,7 +57,7 @@ class AddressBook(object):
                         continue
                     self.book[name] = row
                     count += 1
-            except UnicodeError, what:
+            except Exception, what:
                 print what
                 err = True
                 continue
