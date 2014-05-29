@@ -97,18 +97,17 @@ class GoogleTalkPlugin(Plugin):
             continue
         self.current_connection = connect_object
         if self.app.nickname + ":" == message[0:len(self.app.nickname) + 1]:
-            message = (
-                self.app.nickname + " " +
-                message[len(self.app.nickname) + 1:].strip())
-            self.app.messages.put(message)
+            message = message[len(self.app.nickname) + 1:].strip()
+            self.app.messages.put(self.app.nickname + " " + message)
             self.app.add_corpus(message)
         else:
+            message = self.app.cut_link(message, "[link]")
             if self.last_nickname != nickname:
                 text = nickname + " says: " + message
             else:
                 text = message
-            text = self.app.cut_link(text, "[link]")
-            self.app.say(text, corpus=True)
+            self.app.say(text)
+            self.app.add_corpus(message)
             # Don't update last_from if it is a command
             self.last_from = from_
             self.last_nickname = nickname

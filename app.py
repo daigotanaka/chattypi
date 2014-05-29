@@ -159,10 +159,8 @@ class Application(object):
                     self.data_path,
                     self.config.get("sphinx")["dict_file"])
             )
-            cmd = " ".join(args)
-            print cmd
             self._sphinx = subprocess.Popen(
-                cmd,
+                " ".join(args),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 shell=True)
@@ -352,7 +350,6 @@ class Application(object):
         return None
 
     def update_corpus(self):
-        self.say("Updating")
         self.on_mute = True
         self._kill_sphinx()
         args = [
