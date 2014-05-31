@@ -16,7 +16,7 @@
             if (message.output.substring(0, 4) != 'http' &&
                 message.output != '<back>' &&
                 message.output != '<forward>') {
-                $('div#output').html(message.output );
+                    $('div#output').html(message.output + "<br/>" + $('div#output').html());
                 return;
             }
 
@@ -42,9 +42,11 @@
         };
     };
     $('input[name=text]').on('keyup', function(e){
+        if (e.keyCode != 13) return;
         e.preventDefault();
         var message = $(this).val();
         ws.send(JSON.stringify({'output': message}));
+        $(this).val("");
     });
     $('input[name=text]').focus();
     window.onbeforeunload = function() {
@@ -55,15 +57,18 @@
 </script>
 <style>
 input {
-    font-size: 48px; 
-    width: 600px;
-    border-style: none; 
-    background-color: transparent; 
-    border-style: solid; 
-    border-width: 0px 0px 1px 0px; 
+  font-size: 48px;
+  width: 600px;
+  border-style: none;
+  background-color: transparent;
+  border-style: solid;
+  border-width: 0px 0px 1px 0px;
 }
 textarea:focus, input:focus{
     outline: 0;
+}
+div {
+  font-size: 36px;
 }
 </style>
  

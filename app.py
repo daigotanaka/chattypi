@@ -23,7 +23,6 @@
 import datetime
 import logging
 import os
-import Queue
 import re
 import requests
 import simplejson
@@ -35,7 +34,7 @@ import urllib2
 
 from config import config
 from gps import gps, WATCH_ENABLE
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from pydispatch import dispatcher
 from threading import Thread
 
@@ -48,11 +47,14 @@ from speech2text import Speech2Text
 import libs
 
 
+message_queue = Queue()
+
 class Application(object):
 
     def __init__(self):
+        global message_queue
         self.config = config
-        self.messages = Queue.Queue()
+        self.messages = message_queue
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         fh = logging.FileHandler(config.get("system")["logfile"])
@@ -276,9 +278,12 @@ class Application(object):
     def say(self, text, corpus=False, nowait=False):
         try:
             self.logger.info("%s: %s" % (self.nickname, text))
+            self.update_screen(self._insert_href(text))
         except Exception, e:
             self.logger.error(e)
 
+        text = self._cut_link(text)
+        text = text.replace("#", "")
         words = text.split(" ")
         index = 0
         cont = True
@@ -309,7 +314,7 @@ class Application(object):
         message = ""
         try:
             message = self.messages.get(wait)
-        except Queue.Empty:
+        except Exception, err:
             pass
         return message.lower().strip()
 
@@ -381,6 +386,7 @@ class Application(object):
         self.say("Updated vocabulary")
 
     def add_corpus(self, text):
+        text = self._remove_link()
         self.logger.debug("Adding corpus: " + text)
         if not text:
             return
@@ -390,13 +396,6 @@ class Application(object):
             self.config.get("sphinx")["corpus_file"])
         with open(corpus_file, "a") as f:
             f.write(text + "\n")
-
-    def cut_link(self, text, replace=""):
-        text = text + " "
-        for item in re.findall(r"(http[s]*:\/\/[^\s]+)", text):
-            self.links.append(item)
-        text = re.sub(r"http[s]*:\/\/[^\s]+", replace, text)
-        return text
 
     def pop_link(self):
         return self.links.pop() if self.links else None
@@ -506,6 +505,22 @@ class Application(object):
         url = "http://translate.google.com/translate_tts?" + param
         self.play_sound(url=url, nowait=nowait)
 
+    def _remove_link(self, text):
+        self._cut_link(text, remember=False)
+
+    def _cut_link(self, text, replace="", remember=True):
+        text = text + " "
+        if remember:
+            for item in re.findall(r"(http[s]*:\/\/[^\s]+)", text):
+                self.links.append(item)
+        text = re.sub(r"http[s]*:\/\/[^\s]+", replace, text)
+        return text
+
+    def _insert_href(self, text):
+        text = text + " "
+        text = re.sub(r"(http[s]*:\/\/[^\s]+)", r'<a href="\1">link</a>', text)
+        return text
+
     def _listen(self):
         self.on_mute = False
         while not self.exit_now:
@@ -583,7 +598,7 @@ if __name__ == "__main__":
 
     if app.screen_on:
         from server import start_server
-        process = Process(target=start_server, args=(None,))
+        process = Process(target=start_server, args=(message_queue,))
         process.start()
 
     while not app.exit_now:

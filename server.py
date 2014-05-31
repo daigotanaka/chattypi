@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -27,6 +27,7 @@ from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
 from flask import current_app, Flask, jsonify, render_template, request
 
+from config import config
 import json
 import os
 import socket
@@ -51,32 +52,36 @@ class WebServer(Flask):
         self.port = port
         self.template_folder = template
         self.sockets = set()
+        self.config = config
+        self.nickname = config.get("computer_nickname")
 
     def create_instance(self):
         self.flask = Flask(self.name, template_folder=self.template_folder)
         self.flask.secret_key = os.urandom(24)
         self.flask.debug = True
-     
+
         self.http_server = WSGIServer((self.host,self.port), self.wsgi_app, handler_class=WebSocketHandler)
 
         return self.flask
 
-    def start(self, args=None):
+    def start(self, message_queue):
+        self.message_queue = message_queue
         print("Server started at %s:%s" % (self.host,self.port))
         self.http_server.serve_forever()
 
-    def wsgi_app(self, environ, start_response):  
+    def wsgi_app(self, environ, start_response):
         path = environ["PATH_INFO"]
         if path == "/websocket":
             return self.handle_websocket(environ["wsgi.websocket"])
- 
+
         return self.flask(environ, start_response)
- 
+
     def handle_websocket(self, ws):
         erase_list = []
-        for socket in self.sockets:
-            if not socket.socket:
-                erase_list.append(socket)
+#        for socket in self.sockets:
+#            if (not hasattr(socket, "socket") or
+#                not socket.socket):  # Dead socket
+#                erase_list.append(socket)
         for socket in erase_list:
             self.sockets.remove(socket)
 
@@ -91,11 +96,13 @@ class WebServer(Flask):
             if message is None:
                 break
             message = json.loads(message)
+            self.message_queue.put(self.nickname + message["output"])
             erase_list = []
             for socket in self.sockets:
-                if not socket.socket:
-                    erase_list.append(socket)
-                    continue
+#                if (not hasattr(socket, "socket") or
+#                    not socket.socket):  # Dead socket
+#                    erase_list.append(socket)
+#                    continue
                 socket.send(json.dumps({"output": message["output"]}))
             for socket in erase_list:
                 self.sockets.remove(socket)
@@ -107,8 +114,9 @@ class WebServer(Flask):
         html = html or "<img src=\"http://placekitten.com/300/200\">"
         erase_list = []
         for socket in self.sockets:
-            if not socket.socket:
-                erase_list.append(socket)
+#            if (not hasattr(socket, "socket") or
+#                not socket.socket):  # Dead socket
+#                erase_list.append(socket)
             try:
                 socket.send(json.dumps({"output": html}))
             except WebSocketError:
@@ -138,12 +146,13 @@ def index():
 @flask.route("/update/", methods=["POST"])
 def update():
     html = request.form["html"] or None
+    print html
     server.update_screen(html=html)
     return render_template("index.html", port=server.port)
 
 
-def start_server(args=None):
-    server.start()
+def start_server(message_queue):
+    server.start(message_queue)
 
 if __name__ == "__main__":
     start_server()

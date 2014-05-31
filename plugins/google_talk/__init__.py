@@ -101,7 +101,6 @@ class GoogleTalkPlugin(Plugin):
             self.app.messages.put(self.app.nickname + " " + message)
             self.app.add_corpus(message)
         else:
-            message = self.app.cut_link(message, "[link]")
             if self.last_nickname != nickname:
                 text = nickname + " says: " + message
             else:

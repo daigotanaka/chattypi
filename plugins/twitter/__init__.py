@@ -76,7 +76,6 @@ class TwitterPlugin(Plugin):
 
         sentences = []
         for status in statuses:
-            text = self.app.cut_link(status["text"])
             # Twitter returns GMT time in the format like this:
             # Mon Sep 16 06:57:38 +0000 2013
             # Python 2.x does not support %z, so converting to "GMT"
@@ -86,7 +85,7 @@ class TwitterPlugin(Plugin):
             tweeted_at = tweeted_at - datetime.timedelta(seconds=time.timezone - 3600 * time.daylight)
             tweeted_at_pretty = pretty.date(tweeted_at)
 
-            sentences.append(text)
+            sentences.append(status["text"])
             sentences.append(tweeted_at_pretty)
         self.app.recite(sentences)
 
