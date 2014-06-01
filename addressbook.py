@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import codecs
 import csv
 import os
 import re
@@ -50,9 +49,11 @@ class AddressBook(object):
                 for row in reader:
                     if count == 0:
                         self.fields = row
-                    name = row[self.fields.index(self.nickname_field)].lower()
+                    nickname_field = self.fields.index(self.nickname_field)
+                    name = row[nickname_field].lower()
                     if not name:
-                        name = row[self.fields.index(self.fullname_field)].lower()
+                        fullname_field = self.fields.index(self.fullname_field)
+                        name = row[fullname_field].lower()
                     if not name:
                         continue
                     self.book[name] = row

@@ -38,17 +38,17 @@ def import_config_spec():
         if (plugin != "__init__.py"
             and os.path.isdir(os.path.join(path, plugin))
             and os.path.exists(
-                os.path.join(path, plugin, "__init__.py")
-                )
-            ):
+                os.path.join(path, plugin, "__init__.py"))):
             module = libs.dynamic_import("plugins." + plugin)
             if not hasattr(module, "config"):
                 continue
-            config_module = libs.dynamic_import("plugins." + plugin + ".config")
+            module_name = "plugins." + plugin + ".config"
+            config_module = libs.dynamic_import(module_name)
             if type(config_module.configspec) != ConfigObj:
                 continue
             config_spec = config_module.configspec.write()
-            config_spec.insert(1, "[" + module.__name__[len("plugin.") + 1:] + "]")
+            section = "[" + module.__name__[len("plugin.") + 1:] + "]"
+            config_spec.insert(1, section)
             config_specs.extend(config_spec)
     return config_specs
 

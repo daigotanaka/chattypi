@@ -46,8 +46,8 @@ from speech2text import Speech2Text
 
 import libs
 
-
 message_queue = Queue()
+
 
 class Application(object):
 
@@ -184,7 +184,8 @@ class Application(object):
             voice_commands = [voice_commands]
         if at_sleep:
             self.signals_at_sleep.append(signal)
-            self.logger.debug("Added %s as a valid command while sleeping:" %
+            self.logger.debug(
+                "Added %s as a valid command while sleeping:" %
                 signal)
         for command in voice_commands:
             if command in self.command2signal:
@@ -198,7 +199,8 @@ class Application(object):
                 % (command, signal))
 
     def schedule_task(self, interval, func):
-        self.logger.debug("Scheduled %s with %d sec interval" %
+        self.logger.debug(
+            "Scheduled %s with %d sec interval" %
             (func, interval))
         tasks = self.periodic_tasks.setdefault(str(interval), [])
         tasks.append(func)
@@ -273,7 +275,7 @@ class Application(object):
                 self.logger.debug("Stopped reciting")
                 return
         if corpus:  # Add to corpus all at once instead of sentence by sentence
-            self.app.add_corpus(message)
+            self.app.add_corpus(" ".join(sentences))
 
     def say(self, text, corpus=False, nowait=False):
         try:
@@ -314,7 +316,7 @@ class Application(object):
         message = ""
         try:
             message = self.messages.get(wait)
-        except Exception, err:
+        except Exception:
             pass
         return message.lower().strip()
 
@@ -380,7 +382,6 @@ class Application(object):
                 self.data_path,
                 self.config.get("sphinx")["lm_file"])
         ]
-        cmd = " ".join(args)
         os.system(" ".join(args))
         self.on_mute = False
         self.say("Updated vocabulary")

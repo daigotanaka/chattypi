@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,8 +32,10 @@ from peewee import CharField, Model, SqliteDatabase
 
 logger = logging.getLogger(__name__)
 
-sqlite_db = SqliteDatabase(os.path.join(config.get("system")["default_path"],
-    config.get("system")["db_file"]))
+sqlite_db = SqliteDatabase(
+    os.path.join(
+        config.get("system")["default_path"],
+        config.get("system")["db_file"]))
 
 
 def connect_db():
@@ -50,9 +52,9 @@ def init_db():
         if not inspect.isclass(model):
             continue
         try:
-           instance = model()
+            instance = model()
         except Exception:
-           continue
+            continue
         if not isinstance(instance, BaseModel):
             continue
         try:

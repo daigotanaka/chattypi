@@ -3,7 +3,9 @@ import requests
 import sys
 
 if len(sys.argv) < 3:
-    print "Usage: python update_corpus.py input_corpus_file output_dict_file output_lm_file"
+    print (
+        "Usage: python update_corpus.py input_corpus_file " +
+        "output_dict_file output_lm_file")
     sys.exit(1)
 
 url = "http://www.speech.cs.cmu.edu/cgi-bin/tools/lmtool/run"

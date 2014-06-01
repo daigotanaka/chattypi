@@ -24,6 +24,7 @@ import os
 
 from models import CommandNickname
 
+
 class CoreCommands(object):
 
     def __init__(self, app):
@@ -80,7 +81,10 @@ class CoreCommands(object):
         os.system("sudo shutdown -h now")
 
     def switch_audio(self):
-        self.app.config.get("audio")["out_device"] = 0 if self.app.config.get("audio")["out_device"] == 1 else 1
+        if self.app.config.get("audio")["out_device"] == 0:
+            self.app.config.get("audio")["out_device"] = 1
+        else:
+            self.app.config.get("audio")["out_device"] = 0
         self.app.config.write()
         self.app.say("Switched audio output hardware")
 
@@ -88,15 +92,18 @@ class CoreCommands(object):
         self.app.say(self.app.get_ip())
 
     def status_report(self):
-        self.app.say("Current noise level is %.1f" % self.app.vol_average
+        self.app.say(
+            "Current noise level is %.1f" % self.app.vol_average
             + ". Your voice is %.1f" % self.app.current_volume)
 
     def turn_on(self, param):
         message = "I don't know how to turn on %s" % param
         if param.lower() == "vnc server":
-            self.app.system(os.path.join(self.app.usr_bin_path, "vncserver") + " :1")
+            self.app.system(
+                os.path.join(self.app.usr_bin_path, "vncserver") + " :1")
             message = "VNC server is on"
-        elif "debug mode" in param.lower() or "debugging mode" in param.lower():
+        elif ("debug mode" in param.lower() or
+                "debugging mode" in param.lower()):
             if self.app.config.get("debug"):
                 message = "Debug mode is already on"
             else:
@@ -131,7 +138,8 @@ class CoreCommands(object):
         nickname = param.strip().lower()
         cn = CommandNickname.select().where(CommandNickname.nickname==nickname)
         if cn.count() == 0:
-            CommandNickname.create(nickname=nickname, command=self.app.last_command)
+            CommandNickname.create(
+                nickname=nickname, command=self.app.last_command)
             self.app.say("Nickname is created for %s" % self.app.last_command)
             return
         self.app.say("The nickname %s is already taken." % nickname)
@@ -141,7 +149,8 @@ class CoreCommands(object):
         cn[0].nickname = nickname
         cn[0].command = self.app.last_command
         cn[0].save()
-        self.app.say("The nick name is replaced with %s" % self.app.last_command)
+        self.app.say(
+            "The nick name is replaced with %s" % self.app.last_command)
 
     def current_address(self):
         addr = self.app.get_current_address()

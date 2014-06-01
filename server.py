@@ -25,7 +25,7 @@
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
-from flask import current_app, Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request
 
 from config import config
 import json
@@ -46,7 +46,12 @@ else:
 
 class WebServer(Flask):
 
-    def __init__(self, name=__name__, host="0.0.0.0", port=8000, template="./template/"):
+    def __init__(
+            self,
+            name=__name__,
+            host="0.0.0.0",
+            port=8000,
+            template="./template/"):
         self.name = name
         self.host = host
         self.port = port
@@ -60,13 +65,16 @@ class WebServer(Flask):
         self.flask.secret_key = os.urandom(24)
         self.flask.debug = True
 
-        self.http_server = WSGIServer((self.host,self.port), self.wsgi_app, handler_class=WebSocketHandler)
+        self.http_server = WSGIServer(
+            (self.host, self.port),
+            self.wsgi_app,
+            handler_class=WebSocketHandler)
 
         return self.flask
 
     def start(self, message_queue):
         self.message_queue = message_queue
-        print("Server started at %s:%s" % (self.host,self.port))
+        print("Server started at %s:%s" % (self.host, self.port))
         self.http_server.serve_forever()
 
     def wsgi_app(self, environ, start_response):
@@ -135,7 +143,10 @@ flask = server.create_instance()
 @flask.route("/ping/")
 @jsonp
 def ping():
-    return jsonify(status="ok", app="psittaceous", url="http://" + myIP + ":8000")
+    return jsonify(
+        status="ok",
+        app="psittaceous",
+        url="http://" + myIP + ":8000")
 
 
 @flask.route("/")
