@@ -135,7 +135,7 @@ flask = server.create_instance()
 @flask.route("/ping/")
 @jsonp
 def ping():
-    return jsonify(status="ok", app="chattypi", url="http://" + myIP + ":8000")
+    return jsonify(status="ok", app="psittaceous", url="http://" + myIP + ":8000")
 
 
 @flask.route("/")

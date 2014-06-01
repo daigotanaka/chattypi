@@ -385,8 +385,8 @@ class Application(object):
         self.on_mute = False
         self.say("Updated vocabulary")
 
-    def add_corpus(self, text):
-        text = self._remove_link()
+    def add_corpus(self, param):
+        text = self._remove_link(param)
         self.logger.debug("Adding corpus: " + text)
         if not text:
             return
@@ -506,7 +506,7 @@ class Application(object):
         self.play_sound(url=url, nowait=nowait)
 
     def _remove_link(self, text):
-        self._cut_link(text, remember=False)
+        return self._cut_link(text, remember=False)
 
     def _cut_link(self, text, replace="", remember=True):
         text = text + " "

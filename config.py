@@ -62,10 +62,10 @@ username = string(max=32, default="pi")
 email = string(max=256)
 
 [system]
-logfile = string(max=1024, default="log/chattypi.log")
+logfile = string(max=1024, default="log/psittaceous.log")
 usr_bin = string(max=1024, default="/usr/bin")
-default_path = string(max=1024, default="/home/pi/chattypi")
-db_file = string(max=1024, default="chattypi.db")
+default_path = string(max=1024, default="/home/pi/psittaceous")
+db_file = string(max=1024, default="psittaceous.db")
 inet_check_max_attempts = integer(1, 10, default=3)
 cue = string(max=1024, default="hey ok okay listen")
 screen = boolean(default=False)
