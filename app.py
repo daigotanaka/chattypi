@@ -152,6 +152,8 @@ class Application(object):
             while vol < self.min_volume:
                 self.record_once()
                 vol = self._get_volume()
+                self.logger.debug("Volume: %f" % vol)
+                time.sleep(1)
             self.logger.debug("Restarting sphinx")
             os.system(os.path.join(self.default_path, "bin/killps"))
             args = (
@@ -230,12 +232,13 @@ class Application(object):
             param = self._get_param(text, command)
             self.logger.debug("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
-            self.play_sound("sound/ok.wav")
+            self.say("ok")
             dispatcher.send(signal=sig, **kwargs)
             break
         else:
-            message = "Did you say, %s?" % text
-            self.say(message)
+            if not self.sleeping:
+                message = "Did you say, %s?" % text
+                self.say(message)
 
     def is_command(self, text, command):
         if text[0:len(command)] == command:
@@ -252,22 +255,28 @@ class Application(object):
             if os.path.exists(file):
                 os.remove(file)
 
-    def play_sound(self, file="", url="", nowait=False):
-        file = (
-            os.path.join(self.default_path, file) if not url
+    def play_sound(self, file_name="", url="", nowait=False):
+        file_name = (
+            os.path.join(self.default_path + "/sound", file_name) if not url
             else "\"" + url + "\"")
+
+        if not url and not os.path.exists(file_name):
+            self.logger.debug("File does not exist: " + file_name)
+            return False
+
         if self.sound_proc:
             self.sound_proc.wait()
 
         cmd = (
             os.path.join(self.usr_bin_path, "mplayer") + " -ao " +
-            self.audio_out_device + " -really-quiet " + file)
+            self.audio_out_device + " -really-quiet " + file_name)
 
         if nowait:
             self.sound_proc = subprocess.Popen((cmd).split(" "))
-            return
+            return True
 
         os.system(cmd)
+        return True
 
     def recite(self, sentences, corpus=False):
         for sentence in sentences:
@@ -324,8 +333,7 @@ class Application(object):
         if message:
             self.say(message)
         else:
-            self.logger.info("%s: Is that OK?" % self.nickname)
-            self.play_sound("sound/is_that_ok.mp3")
+            self.say("Is that ok?")
         text = self.get_one_message()
         self.logger.debug(text)
         count = 0
@@ -334,8 +342,7 @@ class Application(object):
                 (not text or not ("yes" in text or "no" in text))):
             count += 1
             self.logger.debug(message)
-            self.logger.info("%s: Please answer by yes or no" % self.nickname)
-            self.play_sound("sound/yes_or_no.mp3")
+            self.say("Please answer by yes or no?")
             text = self.get_one_message()
             self.logger.debug(text)
         if text and "yes" in text:
@@ -346,18 +353,12 @@ class Application(object):
         content = self.get_one_message()
         if content:
             return content
-
-        self.logger.info(
-            self.nickname +
-            ": Sorry, I could not catch that. Please try again.")
-        self.play_sound("sound/try_again.mp3")
+        self.say("Sorry, I could not understand that. Please try again.")
         content = self.get_one_message()
         self.logger.debug(content)
         if content:
             return content
-
-        self.logger.info("%s: Sorry" % self.nickname)
-        self.play_sound("sound/sorry.mp3")
+        self.say("Sorry")
         return None
 
     def update_corpus(self):
@@ -498,13 +499,50 @@ class Application(object):
             text = text[:endpos]
         return text.strip()
 
-    def _say(self, text, nowait):
+    def _say(self, text, nowait, cache=False):
+        file_name = text.lower().strip().replace(" ", "_")
+        file_name = file_name.replace("?", "")
+        file_name = file_name.replace(",", "").replace(".", "")
+        file_name += ".mp3"
+        if self.play_sound(file_name):
+            return
+
         try:
             param = urllib.urlencode({"tl": "en", "q": text})
         except UnicodeEncodeError:
             return
         url = "http://translate.google.com/translate_tts?" + param
-        self.play_sound(url=url, nowait=nowait)
+
+        if not cache:
+            return self.play_sound(url=url, nowait=nowait)
+
+        file_name = self.default_path + "/sound/" + file_name
+        self._download(url, file_name)
+        self.play_sound(file_name)
+
+    def _download(self, url, file_name):
+        user_agent = "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)"
+        headers = {"User-Agent": user_agent}
+        req = urllib2.Request(url=url, headers=headers)
+        client = urllib2.urlopen(req)
+        f = open(file_name, "wb")
+        meta = client.info()
+        file_size = int(meta.getheaders("Content-Length")[0])
+        print "Downloading: %s Bytes: %s" % (file_name, file_size)
+
+        file_size_dl = 0
+        block_sz = 8192
+        while True:
+            buffer = client.read(block_sz)
+            if not buffer:
+                break
+
+            file_size_dl += len(buffer)
+            f.write(buffer)
+            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
+            status = status + chr(8)*(len(status)+1)
+            print status,
+        f.close()
 
     def _remove_link(self, text):
         return self._cut_link(text, remember=False)
@@ -530,12 +568,18 @@ class Application(object):
             output = self.sphinx.stdout.readline()
             # self.logger.debug(output)
             if "READY" in output and not self.ready:
-                self.play_sound("sound/voice_command_ready.mp3")
+                self.say("Voice command ready.")
                 self.ready = True
-            if "Listening..." in output:
+            elif "Listening..." in output:
+                if not self.sleeping:
+                    self.play_sound("sys_start_listening.wav")
                 self.logger.debug(
                     "Started to listen at %s" % datetime.datetime.now())
                 self.listening_since = time.time()
+            elif "Stopped listening" in output:
+                self.logger.debug("Stopped listening. Please wait")
+                if not self.sleeping:
+                    self.play_sound("sys_acked.wav", nowait=True)
 
             m = re.search(r"\d{9}: .*", output)
             if m:

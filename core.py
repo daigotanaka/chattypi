@@ -64,19 +64,19 @@ class CoreCommands(object):
 
     def exit_program(self):
         self.app.logger.info("%s: Voice command off" % self.app.nickname)
-        self.app.play_sound("sound/voice_command_off.mp3")
+        self.app.say("voice command off")
         self.app.clean_files()
         self.app.exit_now = True
 
     def reboot(self):
         self.app.logger.info("%s: Rebooting..." % self.app.nickname)
-        self.app.play_sound("sound/rebooting.mp3")
+        self.app.say("rebooting")
         self.app.clean_files()
         os.system("sudo reboot")
 
     def shutdown(self):
         self.app.logger.info("%s: Shutting down..." % self.app.nickname)
-        self.app.play_sound("sound/shutting_down.mp3")
+        self.app.say("shutting down")
         self.app.clean_files()
         os.system("sudo shutdown -h now")
 

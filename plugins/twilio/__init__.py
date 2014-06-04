@@ -58,8 +58,7 @@ class TwilioPlugin(Plugin):
             self.app.say("Sorry, I cannot find the contact")
             return
         self.app.logger.debug(to_)
-        self.app.logger.info("%s: What message do you want to send?" % self.app.nickname)
-        self.app.play_sound("sound/what_message.mp3")
+        self.app.say("What message do you want to send?")
         body = self.app.record_content(duration=7.0)
         if not body:
             return
@@ -67,8 +66,7 @@ class TwilioPlugin(Plugin):
         name = self.app.addressbook.get_fullname(nickname)
         self.app.say("Your said, " + body)
         if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
-            self.app.logger.info("%s: Cancelled" % self.app.nickname)
-            self.app.play_sound("sound/cancelled.mp3")
+            self.app.say("cancelled")
             return
         try:
             self.twilio.send_sms(to_=to_, from_=self.my_phone, body=body)
@@ -76,8 +74,7 @@ class TwilioPlugin(Plugin):
             self.app.say("I got an error sending message")
             self.app.logger.error(err)
             return
-        self.app.logger.info("%s: Message sent" % self.app.nickname)
-        self.app.play_sound("sound/message_sent.mp3")
+        self.app.say("Message sent")
 
     def read_out_sms(self):
         self.check_sms(quiet=False, repeat=True)

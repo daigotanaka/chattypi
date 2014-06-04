@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -72,8 +72,7 @@ class WolfRamAlphaPlugin(Plugin):
             self.search(query.lower())
 
     def get_query(self):
-        self.app.logger.info("%s: What do you want to search?" % self.app.nickname)
-        self.app.play_sound("sound/what_question.mp3")
+        self.app.say("What do you want to search?")
         query = self.app.record_content(duration=7.0)
         if not query:
             return
@@ -86,7 +85,7 @@ class WolfRamAlphaSearch(object):
 
     def search(self, query):
         response = self.client.query(query)
-        
+
         if len(response.pods) > 0:
             texts = ""
             pod = response.pods[1]

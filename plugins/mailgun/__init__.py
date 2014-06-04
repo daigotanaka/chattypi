@@ -57,8 +57,7 @@ class MailgunPlugin(Plugin):
         self.app.logger.debug(to_)
 
         if not kwargs.get("body"):
-            self.app.logger.info("%s: What message do you want to send?" % self.app.nickname)
-            self.app.play_sound("sound/what_message.mp3")
+            self.app.say("What message do you want to send?")
             body = self.app.record_content(duration=7.0)
             subject = body
             self.app.say("Your said, " + body)
@@ -71,7 +70,7 @@ class MailgunPlugin(Plugin):
         name = self.app.addressbook.get_fullname(nickname)
         if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_ + ". Is that OK?"):
             self.app.logger.info("%s: Cancelled." % self.app.nickname)
-            self.app.play_sound("sound/cancelled.mp3")
+            self.app.say("cancelled")
             return
         try:
             to_email = name + "<" + to_ + ">" if name else to_
@@ -80,7 +79,7 @@ class MailgunPlugin(Plugin):
             self.app.say("I got an error sending message")
             return
         self.app.logger.info("%s: Message sent." % self.app.nickname)
-        self.app.play_sound("sound/message_sent.mp3")
+        self.app.say("message sent")
 
     def send_log(self, param):
         with File(self.app.config.get("system")["logfile"]) as f:

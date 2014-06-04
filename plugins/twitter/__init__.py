@@ -52,18 +52,15 @@ class TwitterPlugin(Plugin):
         super(TwitterPlugin, self).__init__(app)
 
     def tweet(self):
-        self.app.logger.info("%s: What do you want to tweet?" % self.app.nickname)
-        self.app.play_sound("sound/what_tweet.mp3")
+        self.app.say("What do you want to tweet?")
         status = self.app.record_content(duration=7.0)
         if not status:
             return
         self.app.say("The status, " + status + " will be tweeted.")
         if not self.app.confirm():
-            self.app.logger.info("%s: Cancelled" % self.app.nickname)
-            self.app.play_sound("sound/cancelled.mp3")
+            self.app.say("Cancelled")
             return
-        self.app.logger.info("%s: Tweeted" % self.app.nickname)
-        self.app.play_sound("sound/tweeted.mp3")
+        self.app.say("Tweeted")
         self.twitter.tweet(status)
 
     def read_tweets(self, param):
