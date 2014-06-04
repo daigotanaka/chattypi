@@ -165,7 +165,9 @@ class Application(object):
                 "-dict",
                 os.path.join(
                     self.data_path,
-                    self.config.get("sphinx")["dict_file"])
+                    self.config.get("sphinx")["dict_file"]),
+                "-ctlcount",
+                "10"
             )
             self._sphinx = subprocess.Popen(
                 " ".join(args),
