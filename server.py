@@ -104,7 +104,7 @@ class WebServer(Flask):
             if message is None:
                 break
             message = json.loads(message)
-            self.message_queue.put(self.nickname + message["output"])
+            self.message_queue.put(message["output"])
             erase_list = []
             for socket in self.sockets:
 #                if (not hasattr(socket, "socket") or
@@ -118,15 +118,14 @@ class WebServer(Flask):
     def exceeded_max_connection(self, ws):
         ws.send(json.dumps({"output": "Sorry, max connection reached."}))
 
-    def update_screen(self, html=None):
-        html = html or "<img src=\"http://placekitten.com/300/200\">"
+    def update_screen(self, html=None, css=None):
         erase_list = []
         for socket in self.sockets:
 #            if (not hasattr(socket, "socket") or
 #                not socket.socket):  # Dead socket
 #                erase_list.append(socket)
             try:
-                socket.send(json.dumps({"output": html}))
+                socket.send(json.dumps({"output": html, "css": css}))
             except WebSocketError:
                 erase_list.append(socket)
         for socket in erase_list:
@@ -157,8 +156,9 @@ def index():
 @flask.route("/update/", methods=["POST"])
 def update():
     html = request.form["html"] or None
+    css = request.form["css"] or None
     print html
-    server.update_screen(html=html)
+    server.update_screen(html=html, css=css)
     return render_template("index.html", port=server.port)
 
 

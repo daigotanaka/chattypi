@@ -25,7 +25,7 @@ import logging
 import os
 import re
 import requests
-import simplejson
+import json
 import socket
 import subprocess
 import time
@@ -137,7 +137,7 @@ class Application(object):
         self.sphinx_timeout = config.get("sphinx")["timeout_sec"]
         self.listening_since = None
         self._sphinx = None
-        self._kill_sphinx()
+        self.kill_sphinx()
 
         if config.get("system")["have_gps"]:
             self.gps = gps(mode=WATCH_ENABLE)
@@ -281,14 +281,17 @@ class Application(object):
         return True
 
     def recite(self, sentences, corpus=False):
+        self.sleeping = True
         for sentence in sentences:
             if not self.say(sentence):
                 self.logger.debug("Stopped reciting")
+                self.sleeping = False
                 return
         if corpus:  # Add to corpus all at once instead of sentence by sentence
             self.app.add_corpus(" ".join(sentences))
+        self.sleeping = False
 
-    def say(self, text, corpus=False, nowait=False):
+    def say(self, text, corpus=False, nowait=False, cache=False):
         try:
             self.logger.info("%s: %s" % (self.nickname, text))
             self.update_screen(self._insert_href(text))
@@ -303,7 +306,7 @@ class Application(object):
         while index < len(words):
             block = " ".join(words[index:index + 10])
             if block.strip():
-                self._say(block, nowait=nowait)
+                self._say(block, nowait=nowait, cache=cache)
             index += 10
 
             if self.nickname + " stop" in self.get_one_message(wait=False):
@@ -365,7 +368,7 @@ class Application(object):
 
     def update_corpus(self):
         self.on_mute = True
-        self._kill_sphinx()
+        self.kill_sphinx()
         args = [
             os.path.join(self.default_path, "bin/updatecorpus"),
             self.default_path,
@@ -387,7 +390,7 @@ class Application(object):
         ]
         os.system(" ".join(args))
         self.on_mute = False
-        self.say("Updated vocabulary")
+        self.say("Updated vocabulary", cache=True)
 
     def add_corpus(self, param):
         text = self._remove_link(param)
@@ -406,18 +409,18 @@ class Application(object):
 
     def mute(self):
         self.on_mute = True
-        self._kill_sphinx()
+        self.kill_sphinx()
 
     def unmute(self):
         self.on_mute = False
 
     def wake_up(self):
-        self.say("Hello again")
+        self.say("Hello again", cache=True)
         self.sleeping = False
 
     def go_to_sleep(self):
         self.sleeping = True
-        self.say("Bye for now")
+        self.say("Bye for now", cache=True)
 
     def get_ip(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -439,7 +442,11 @@ class Application(object):
                     self.sphinx_timeout):
                 self.logger.debug("Sphinx timeout")
                 self.listening_since = None
-                self._kill_sphinx()
+                self.kill_sphinx()
+                if not self.sleeping:
+                    self.play_sound("sys_sphinx_timeout.wav", nowait=True)
+                css = {"background-color": "red"}
+                self.update_screen(css=css)
                 continue
 
             message = self.get_one_message(wait=False)
@@ -456,7 +463,7 @@ class Application(object):
         self.listener_thread.join(1.0)
         if self.listener_thread.is_alive():
             self.listener_thread._Thread__stop()
-        self._kill_sphinx()
+        self.kill_sphinx()
         return
 
     def _get_volume(self, rotation=0):
@@ -569,20 +576,24 @@ class Application(object):
                 continue
             output = self.sphinx.stdout.readline()
             # self.logger.debug(output)
-            if "READY" in output and not self.ready:
-                self.say("Voice command ready.")
-                self.ready = True
+            if "READY" in output:
+                if not self.ready:
+                    self.say("Voice command ready.")
+                    self.ready = True
+                css = {"background-color": "green"}
+                self.update_screen(css=css)
             elif "Listening..." in output:
-                if not self.sleeping:
-                    self.play_sound("sys_start_listening.wav")
                 self.logger.debug(
                     "Started to listen at %s" % datetime.datetime.now())
+                css = {"background-color": "blue"}
+                self.update_screen(css=css)
                 self.listening_since = time.time()
             elif "Stopped listening" in output:
                 self.logger.debug("Stopped listening. Please wait")
                 if not self.sleeping:
                     self.play_sound("sys_acked.wav", nowait=True)
-
+                css = {"background-color": "yellow"}
+                self.update_screen(css=css)
             m = re.search(r"\d{9}: .*", output)
             if m:
                 message = m.group(0)[11:]
@@ -594,19 +605,19 @@ class Application(object):
                 self.listening_since = None
                 self.messages.put(message)
 
-    def _kill_sphinx(self):
+    def kill_sphinx(self):
         os.system(self.default_path + "/bin/killps")
         if self._sphinx:
             self._sphinx = None
         self.logger.debug("Terminated Sphinx")
 
     # Requires Flask server
-    def update_screen(self, html=None):
+    def update_screen(self, html=None, css={"background-color": "white"}):
         if not self.screen_on:
             return
         url = "http://0.0.0.0:8000/update/"
         user_agent = "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)"
-        values = {"html": html}
+        values = {"html": html, "css": css}
         headers = {"User-Agent": user_agent}
         data = urllib.urlencode(values)
         req = urllib2.Request(url, data, headers)
@@ -636,7 +647,7 @@ class Application(object):
         response = requests.get(
             "http://maps.googleapis.com/maps/api/geocode/json?" +
             "latlng=%s,%s&sensor=false" % (lat, lng))
-        address = simplejson.loads(response.content)["results"]
+        address = json.loads(response.content)["results"]
         return address[0]
 
 

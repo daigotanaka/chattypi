@@ -132,6 +132,7 @@ class PjTwilioPlugin(Plugin):
         self.app.mute()
 
     def post_session_callback(self):
+        self.app.say("Call ended", cache=True)
         self.app.unmute()
 
     def error_callback(self, message):

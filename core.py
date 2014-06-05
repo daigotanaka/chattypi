@@ -40,6 +40,7 @@ class CoreCommands(object):
             "wake up": ("wake up", self.app.wake_up, True),
             "add corpus": ("add corpus", self.app.add_corpus, False),
             "update corpus": ("update corpus", self.app.update_corpus, False),
+            "restart sphinx": ("restart sphinx", self.app.kill_sphinx, False),
             "learn new words": ("update corpus", self.app.update_corpus, False),
             "switch audio": ("switch audio", self.switch_audio, False),
             "what is local ip": ("local ip", self.local_ip, False),

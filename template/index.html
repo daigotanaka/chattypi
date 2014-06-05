@@ -13,32 +13,44 @@
         ws.onmessage = function (msg) {
             var message = JSON.parse(msg.data);
 
-            if (message.output.substring(0, 4) != 'http' &&
-                message.output != '<back>' &&
-                message.output != '<forward>') {
-                    $('div#output').html(message.output + "<br/>" + $('div#output').html());
-                return;
+            if (message.css != null) {
+                try {
+                    var attr = JSON.parse(message.css.replace(/\'/g, '"'));
+                } catch (err) {
+                }
+                for (var key in attr) {
+                    $('body').css(key, attr[key]);
+                }
             }
 
-            if (message.output == '<back>') {
-                back = backHistory.pop();
-                if (back !== undefined) {
-                    forwardHistory.push(currentPage);
-                    currentPage = back;
+            if (message.output != null && message.output != 'None') {
+                if (message.output.substring(0, 4) != 'http' &&
+                    message.output != '<back>' &&
+                    message.output != '<forward>') {
+                        $('div#output').html(message.output + "<br/>" + $('div#output').html());
+                    return;
                 }
-            } else if (message.output == '<forward>') {
-                forward = forwardHistory.pop();
-                if (forward !== undefined) {
+
+                if (message.output == '<back>') {
+                    back = backHistory.pop();
+                    if (back !== undefined) {
+                        forwardHistory.push(currentPage);
+                        currentPage = back;
+                    }
+                } else if (message.output == '<forward>') {
+                    forward = forwardHistory.pop();
+                    if (forward !== undefined) {
+                        backHistory.push(currentPage);
+                        currentPage = forward;
+                    }
+                } else if (message.output.substring(0, 4) == 'http') {
                     backHistory.push(currentPage);
-                    currentPage = forward;
+                    forwardHistory = Array()
+                    currentPage = message.output;
                 }
-            } else if (message.output.substring(0, 4) == 'http') {
-                backHistory.push(currentPage);
-                forwardHistory = Array()
-                currentPage = message.output;
-            }
 
-            window.open(currentPage, 'psittaceous', 'fullscreen=1,left=0', true);
+                window.open(currentPage, 'psittaceous', 'fullscreen=1,left=0', true);
+            }
         };
     };
     $('input[name=text]').on('keyup', function(e){
