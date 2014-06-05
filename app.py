@@ -508,12 +508,24 @@ class Application(object):
             text = text[:endpos]
         return text.strip()
 
+    def _is_inet_up(self):
+        try:
+            # Ping Google IP
+            response=urllib2.urlopen('http://74.125.228.100',timeout=1)
+            return True
+        except urllib2.URLError as err: pass
+        return False
+
     def _say(self, text, nowait, cache=False):
         file_name = text.lower().strip().replace(" ", "_")
         file_name = file_name.replace("?", "")
         file_name = file_name.replace(",", "").replace(".", "")
         file_name += ".mp3"
         if self.play_sound(file_name):
+            return
+
+        if not self._is_inet_up():
+            self.say("Internet is down", cache=True)
             return
 
         try:
