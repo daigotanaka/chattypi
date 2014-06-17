@@ -61,11 +61,17 @@ class PjTwilio(object):
         ua_cfg.nameserver = ["8.8.8.8", "8.8.4.4"] # Example: Google Public DNS
         media_cfg = pj.MediaConfig()
         media_cfg.clock_rate = 8000
-        media_cfg.ec_tail_len= 0
+        media_cfg.snd_auto_close_time = 5
+        media_cfg.quality = 1
+        media_cfg.ec_tail_len = 0
+        # media_cfg.no_vad = True
         pj_lib.init(
             ua_cfg=ua_cfg,
             log_cfg=pj.LogConfig(level=4, callback=self._call_log_cb),
             media_cfg=media_cfg)
+        pj_lib.set_codec_priority("PCMU/8000/1", 256)
+        for codec in pj_lib.enum_codecs():
+            print codec.name + " " + str(codec.priority)
 
         transport_in = pj_lib.create_transport(pj.TransportType.TLS, pj.TransportConfig(port=5060))
         # Create UDP transport which listens to any available port
@@ -101,7 +107,10 @@ class PjTwilio(object):
         global pj_current_call
         try:
             print "Making call to", uri
-            pj_current_call = self.account.make_call(uri, cb=SipCallCallback(post_session_callback=self.post_session_callback))
+            pj_current_call = self.account.make_call(
+                uri,
+                cb=SipCallCallback(
+                    post_session_callback=self.post_session_callback))
         except pj.Error, e:
             print "Exception: " + str(e)
             return None
@@ -233,7 +242,9 @@ class SipAccountCallback(pj.AccountCallback):
 
         if pj_outgoing_call:
             pj_current_call = call
-            call_cb = SipCallCallback(call=pj_current_call, post_session_callback=self.post_session_callback)
+            call_cb = SipCallCallback(
+                call=pj_current_call,
+                post_session_callback=self.post_session_callback)
             pj_current_call.set_callback(call_cb)
             if self.pre_session_callback:
                 self.pre_session_callback()
@@ -242,7 +253,9 @@ class SipAccountCallback(pj.AccountCallback):
 
         pj_current_call = call
 
-        call_cb = SipCallCallback(pj_current_call, post_session_callback=self.post_session_callback)
+        call_cb = SipCallCallback(
+            pj_current_call,
+            post_session_callback=self.post_session_callback)
         pj_current_call.set_callback(call_cb)
 
         pj_current_call.answer(180)

@@ -34,7 +34,7 @@ def register(app):
     pj_twilio_plugin = PjTwilioPlugin(app)
 
     app.register_command(["answer the phone", "take the call"], "pj_take_call", pj_twilio_plugin.take_call, at_sleep=True)
-    app.register_command(["make a phone call to"], "pj_make_call", pj_twilio_plugin.make_call)
+    app.register_command(["make a phone call to", "make a phone call"], "pj_make_call", pj_twilio_plugin.make_call)
     # Because voice recognition is off during the call, the hang up command only works thru xmpp!
     app.register_command(["hang up"], "pj_hang_up", pj_twilio_plugin.hang_up)
     app.register_command(["redial"], "pj_redial", pj_twilio_plugin.redial)
@@ -75,17 +75,16 @@ class PjTwilioPlugin(Plugin):
                 int(param.replace("-", "").replace("+", ""))
                 to_ = param
             except:
-                nickname = param
-                to_ = self.app.addressbook.get_primary_phone(nickname.lower())
-
-            if not to_:
-                self.app.say("Sorry, I cannot find the contact")
-                return
+                param = self.app.record_nickname(nickname=param.lower(),
+                    say="Who do you want to call?")
+                if not param:
+                    return
+                to_ = self.app.addressbook.get_primary_phone(param)
             self.app.logger.debug(to_)
             self.app.say("Calling %s" % param)
         else:
             to_ = param
-            self.app.say("Calling a SIP contact")
+            self.app.say("Calling a SIP contact", cache=True)
 
         self.redial_number = to_
 
@@ -103,13 +102,13 @@ class PjTwilioPlugin(Plugin):
 
     def redial(self):
         if not self.redial_number:
-            self.app.say("No redial number")
+            self.app.say("No redial number", cache=True)
             return
         self.make_call(self.redial_number)
 
     def call_back(self):
         if not self.call_back_number:
-            self.app.say("No call back number")
+            self.app.say("No call back number", cache=True)
             return
         self.make_call(self.call_back_number)
 
@@ -136,4 +135,4 @@ class PjTwilioPlugin(Plugin):
         self.app.unmute()
 
     def error_callback(self, message):
-        self.app.say(message)
+        self.app.say(message, cache=True)

@@ -26,13 +26,16 @@ from twilio.rest import TwilioRestClient
 from plugins.twilio.config import config
 from plugins import Plugin
 
+SPHINX_NAME = 1
+
 
 def register(app):
     if not app.config.get("twilio")["active"]:
         return
     global twilio_plugin
     twilio_plugin = TwilioPlugin(app)
-    app.register_command(["send an sms to", "send sms to", "send a text message to", "send text message to", "send a text to", "send text to"], "send text", twilio_plugin.send_sms)
+    app.register_command(["send an sms to", "send sms to", "send a text message to", "send text message to", "send a text to", "send text to"], "send text to", twilio_plugin.send_sms)
+    app.register_command(["send an sms", "send sms", "send a text message", "send text message"], "send text", twilio_plugin.send_sms)
     app.register_command(["read sms", "read text messages", "read text message", "read texts", "read text"], "read sms", twilio_plugin.read_out_sms)
 
 class TwilioPlugin(Plugin):
@@ -52,14 +55,13 @@ class TwilioPlugin(Plugin):
         super(TwilioPlugin, self).__init__(app)
 
     def send_sms(self, param):
-        nickname = param
-        to_ = self.app.addressbook.get_primary_phone(nickname.lower())
-        if not to_:
-            self.app.say("Sorry, I cannot find the contact")
+        nickname = self.app.record_nickname(nickname=param.lower(),
+            say="Who do you want text?")
+        if not nickname:
             return
+        to_ = self.app.addressbook.get_primary_phone(nickname)
         self.app.logger.debug(to_)
-        self.app.say("What message do you want to send?")
-        body = self.app.record_content(duration=7.0)
+        body = self.app.record_content(say="What message do you want to send?")
         if not body:
             return
         to_verbal = to_[0:3] + "-" + to_[3:6] + "-" + to_[6:]

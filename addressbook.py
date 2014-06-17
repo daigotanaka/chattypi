@@ -70,6 +70,9 @@ class AddressBook(object):
     def get_field_index(self, field_name):
         return self.fields.index(field_name)
 
+    def exists(self, nickname):
+        return self.book.get(nickname, None) is not None
+
     def get_row(self, nickname):
         return self.book.get(nickname, None)
 

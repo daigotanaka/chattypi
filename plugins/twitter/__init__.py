@@ -52,8 +52,7 @@ class TwitterPlugin(Plugin):
         super(TwitterPlugin, self).__init__(app)
 
     def tweet(self):
-        self.app.say("What do you want to tweet?")
-        status = self.app.record_content(duration=7.0)
+        status = self.app.record_content("What do you want to tweet?")
         if not status:
             return
         self.app.say("The status, " + status + " will be tweeted.")

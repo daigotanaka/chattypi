@@ -57,8 +57,7 @@ class MailgunPlugin(Plugin):
         self.app.logger.debug(to_)
 
         if not kwargs.get("body"):
-            self.app.say("What message do you want to send?")
-            body = self.app.record_content(duration=7.0)
+            body = self.app.record_content("What message do you want to send?")
             subject = body
             self.app.say("Your said, " + body)
         else:

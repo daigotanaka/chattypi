@@ -1,17 +1,17 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2013 Daigo Tanaka (@daigotanaka)
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,6 +21,8 @@
 # THE SOFTWARE.
 
 import os
+import subprocess
+import threading
 
 
 def dynamic_import(module_name, module_globals=None):
@@ -58,12 +60,12 @@ class File(file):
         self.seek(0)  # Rewind file
         return [super(File, self).next() for x in xrange(lines_2find)]
 
-    def tail(self, lines_2find=1):  
+    def tail(self, lines_2find=1):
         self.seek(0, os.SEEK_END)  # Go to end of file
         bytes_in_file = self.tell()
         lines_found, total_bytes_scanned = 0, 0
         while (lines_2find + 1 > lines_found and
-               bytes_in_file > total_bytes_scanned): 
+               bytes_in_file > total_bytes_scanned):
             byte_block = min(
                 self.BLOCKSIZE,
                 bytes_in_file - total_bytes_scanned)
@@ -93,3 +95,26 @@ class File(file):
                 if rows and last_row:
                     yield last_row
         yield last_row
+
+
+class Command(object):
+    def __init__(self, cmd, shell=False):
+        self.cmd = cmd
+        self.shell =shell
+        self.process = None
+
+    def run(self, timeout=30):
+        def target():
+            self.process = subprocess.Popen(self.cmd, shell=self.shell)
+            self.process.communicate()
+
+        thread = threading.Thread(target=target)
+        thread.start()
+
+        thread.join(timeout)
+        if thread.is_alive():
+            self.process.terminate()
+            thread.join()
+
+    def wait(self):
+        return self.process.wait()

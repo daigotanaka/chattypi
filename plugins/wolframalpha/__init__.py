@@ -72,8 +72,7 @@ class WolfRamAlphaPlugin(Plugin):
             self.search(query.lower())
 
     def get_query(self):
-        self.app.say("What do you want to search?")
-        query = self.app.record_content(duration=7.0)
+        query = self.app.record_content("What do you want to search?")
         if not query:
             return
         return query

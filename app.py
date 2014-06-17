@@ -46,6 +46,10 @@ from speech2text import Speech2Text
 
 import libs
 
+SPHINX_COMMAND = 0
+SPHINX_NAME = 1
+SPHINX_FREE_TEXT = 2
+
 message_queue = Queue()
 
 
@@ -138,6 +142,7 @@ class Application(object):
         self.listening_since = None
         self._sphinx = None
         self.kill_sphinx()
+        self.sphinx_mode = SPHINX_COMMAND
 
         if config.get("system")["have_gps"]:
             self.gps = gps(mode=WATCH_ENABLE)
@@ -154,26 +159,8 @@ class Application(object):
                 vol = self._get_volume()
                 self.logger.debug("Volume: %f" % vol)
                 time.sleep(1)
-            self.logger.debug("Restarting sphinx")
-            os.system(os.path.join(self.default_path, "bin/killps"))
-            args = (
-                "pocketsphinx_continuous",
-                "-lm",
-                os.path.join(
-                    self.data_path,
-                    self.config.get("sphinx")["lm_file"]),
-                "-dict",
-                os.path.join(
-                    self.data_path,
-                    self.config.get("sphinx")["dict_file"]),
-                "-ctlcount",
-                "10"
-            )
-            self._sphinx = subprocess.Popen(
-                " ".join(args),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=True)
+            self.restart_sphinx(self.sphinx_mode)
+
         return self._sphinx
 
     @property
@@ -234,13 +221,12 @@ class Application(object):
             param = self._get_param(text, command)
             self.logger.debug("Dispatching signal: %s" % sig)
             kwargs = {"param": param}
-            self.say("ok")
             dispatcher.send(signal=sig, **kwargs)
             break
-        else:
-            if not self.sleeping:
-                message = "Did you say, %s?" % text
-                self.say(message)
+        # else:
+        #     if not self.sleeping:
+        #         message = "Did you say, %s?" % text
+        #         self.say(message)
 
     def is_command(self, text, command):
         if text[0:len(command)] == command:
@@ -277,7 +263,8 @@ class Application(object):
             self.sound_proc = subprocess.Popen((cmd).split(" "))
             return True
 
-        os.system(cmd)
+        self.sound_proc = libs.Command(cmd, shell=True)
+        self.sound_proc.run(timeout=10)
         return True
 
     def recite(self, sentences, corpus=False):
@@ -334,6 +321,12 @@ class Application(object):
             pass
         return message.lower().strip()
 
+    def clear_messages(self):
+        self.on_mute = True
+        while not self.messages.empty():
+            self.messages.get()
+        self.on_mute = False
+
     def confirm(self, message=None):
         if message:
             self.say(message)
@@ -354,17 +347,37 @@ class Application(object):
             return True
         return False
 
-    def record_content(self, duration=10.0):
+    def record_content(self, say=None, cache=True, mode=SPHINX_FREE_TEXT):
+        self.clear_messages()
+        self.restart_sphinx(mode=mode)
+        if say:
+            self.say(say, cache=cache, nowait=True)
         content = self.get_one_message()
         if content:
+            self.restart_sphinx()
             return content
         self.say("Sorry, I could not understand that. Please try again.")
         content = self.get_one_message()
         self.logger.debug(content)
         if content:
+            self.restart_sphinx()
             return content
         self.say("Sorry")
+        self.restart_sphinx()
         return None
+
+    def record_nickname(self, nickname=None, say="Who?"):
+        for retry in range(0, 3):
+            if self.addressbook.exists(nickname):
+                return nickname
+            if nickname:
+                self.say("Sorry, I cannot find the contact", cache=True)
+            nickname = self.record_content(
+                say=say,
+                mode=SPHINX_NAME).lower()
+        self.say("Canceled", cache=True)
+        return None
+
 
     def update_corpus(self):
         self.on_mute = True
@@ -383,10 +396,10 @@ class Application(object):
                 self.config.get("sphinx")["combined_corpus_file"]),
             os.path.join(
                 self.data_path,
-                self.config.get("sphinx")["dict_file"]),
+                self.config.get("sphinx")["full_dict_file"]),
             os.path.join(
                 self.data_path,
-                self.config.get("sphinx")["lm_file"])
+                self.config.get("sphinx")["full_lm_file"])
         ]
         os.system(" ".join(args))
         self.on_mute = False
@@ -454,7 +467,6 @@ class Application(object):
                 continue
             head = message.find(self.nickname)
             if head == -1:
-                self.logger.debug(message)
                 continue
             self.logger.info("%s: %s" % (self.user_nickname, message))
             message = message[head + len(self.nickname):].strip()
@@ -477,6 +489,42 @@ class Application(object):
             self.say("Microphone is up")
             self.is_mic_down = False
         return vol
+
+    def restart_sphinx(self, mode=SPHINX_COMMAND):
+        self.mute()
+        if not 0 <= mode <= 2:
+            mode = 0
+        self.logger.debug("Restarting sphinx")
+        self.sphinx_mode = mode
+        if mode == 0:
+            lm_file = self.config.get("sphinx")["command_lm_file"]
+            dict_file = self.config.get("sphinx")["command_dict_file"]
+        elif mode == 1:
+            lm_file = self.config.get("sphinx")["name_lm_file"]
+            dict_file = self.config.get("sphinx")["name_dict_file"]
+        elif mode == 2:
+            lm_file = self.config.get("sphinx")["full_lm_file"]
+            dict_file = self.config.get("sphinx")["full_dict_file"]
+
+        args = (
+            "pocketsphinx_continuous",
+            "-lm",
+            os.path.join(
+                self.data_path,
+                lm_file),
+            "-dict",
+            os.path.join(
+                self.data_path,
+                dict_file),
+            "-ctlcount",
+            "%d" % self.config.get("sphinx")["ctlcount"],
+        )
+        self._sphinx = subprocess.Popen(
+            " ".join(args),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True)
+        self.unmute()
 
     def _import_plugins(self):
         path, file = os.path.split(os.path.realpath(__file__))
@@ -521,7 +569,7 @@ class Application(object):
         file_name = file_name.replace("?", "")
         file_name = file_name.replace(",", "").replace(".", "")
         file_name += ".mp3"
-        if self.play_sound(file_name):
+        if self.play_sound(file_name, nowait=nowait):
             return
 
         if not self._is_inet_up():
@@ -602,8 +650,6 @@ class Application(object):
                 self.listening_since = time.time()
             elif "Stopped listening" in output:
                 self.logger.debug("Stopped listening. Please wait")
-                if not self.sleeping:
-                    self.play_sound("sys_acked.wav", nowait=True)
                 css = {"background-color": "yellow"}
                 self.update_screen(css=css)
             m = re.search(r"\d{9}: .*", output)
@@ -615,7 +661,9 @@ class Application(object):
                     duration = time.time() - self.listening_since
                 self.logger.debug("Listened for %d seconds" % int(duration))
                 self.listening_since = None
-                self.messages.put(message)
+                self.logger.debug(message)
+                if not self.on_mute:
+                    self.messages.put(message)
 
     def kill_sphinx(self):
         os.system(self.default_path + "/bin/killps")
