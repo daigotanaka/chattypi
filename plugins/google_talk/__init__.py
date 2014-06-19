@@ -119,7 +119,8 @@ class GoogleTalkPlugin(Plugin):
             self.app.say("No chat record found.", cache=True)
             return
         body = self.app.record_content(say="What do you want to respond?")
-        if not self.app.confirm("Respond to " + self.last_nickname + ": " + body):
+        self.app.say("Respond to " + self.last_nickname + ": " + body)
+        if not self.app.confirm():
             self.app.say("Canceled")
             return
         self.send_message(self.last_from, param)

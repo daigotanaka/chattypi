@@ -67,7 +67,8 @@ class MailgunPlugin(Plugin):
             return
 
         name = self.app.addressbook.get_fullname(nickname)
-        if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_ + ". Is that OK?"):
+        self.app.say("The message will be sent to " + (name or nickname) + " " + to_)
+        if not self.app.confirm():
             self.app.logger.info("%s: Cancelled." % self.app.nickname)
             self.app.say("cancelled")
             return

@@ -69,7 +69,8 @@ class TwilioPlugin(Plugin):
         to_verbal = to_[0:3] + "-" + to_[3:6] + "-" + to_[6:]
         name = self.app.addressbook.get_fullname(nickname)
         self.app.say("Your said, " + body)
-        if not self.app.confirm("The message will be sent to " + (name or nickname) + " " + to_verbal + ". Is that OK?"):
+        self.app.say("The message will be sent to " + (name or nickname) + " " + to_verbal)
+        if not self.app.confirm():
             self.app.say("cancelled")
             return
         try:
