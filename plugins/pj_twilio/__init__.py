@@ -70,6 +70,8 @@ class PjTwilioPlugin(Plugin):
         super(PjTwilioPlugin, self).__init__(app)
 
     def make_call(self, param):
+        if param[0:3] == "to ":
+            param = param[3:]
         if not "@" in param:
             try:
                 int(param.replace("-", "").replace("+", ""))

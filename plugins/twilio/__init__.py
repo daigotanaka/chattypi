@@ -55,7 +55,9 @@ class TwilioPlugin(Plugin):
         super(TwilioPlugin, self).__init__(app)
 
     def send_sms(self, param):
-        nickname = self.app.record_nickname(nickname=param.lower(),
+        if param[0:3] == "to ":
+            param = param[3:]
+        nickname = self.app.record_nickname(nickname=param,
             say="Who do you want text?")
         if not nickname:
             return

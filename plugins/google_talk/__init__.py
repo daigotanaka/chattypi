@@ -34,7 +34,7 @@ def register(app):
     global google_talk_plugin
     google_talk_plugin = GoogleTalkPlugin(app)
     app.register_command(
-        ["tell him", "tell her", "tell them"],
+        ["respond to chat"],
         "gtalk_respond",
         google_talk_plugin.respond)
 
@@ -116,9 +116,10 @@ class GoogleTalkPlugin(Plugin):
 
     def respond(self, param, **kwargs):
         if not self.last_from:
+            self.app.say("No chat record found.", cache=True)
             return
-        self.app.say("Respond to " + self.last_nickname + ": " + param)
-        if not self.app.confirm():
+        body = self.app.record_content(say="What do you want to respond?")
+        if not self.app.confirm("Respond to " + self.last_nickname + ": " + body):
             self.app.say("Canceled")
             return
         self.send_message(self.last_from, param)

@@ -130,6 +130,8 @@ class Application(object):
         for key in self.command2signal.keys():
             all_commands += self.nickname + " " + key + "\n"
         all_commands += self.nickname + " stop\n"
+        all_commands += "yes\n"
+        all_commands += "no\n"
         for name in self.addressbook.book.keys():
             all_commands += name + "\n"
         corpus_file = os.path.join(self.data_path, "keyword_corpus.txt")
@@ -331,7 +333,7 @@ class Application(object):
         if message:
             self.say(message)
         else:
-            self.say("Is that ok?")
+            self.say("Is that ok?", cache=True)
         text = self.get_one_message()
         self.logger.debug(text)
         count = 0
@@ -340,7 +342,7 @@ class Application(object):
                 (not text or not ("yes" in text or "no" in text))):
             count += 1
             self.logger.debug(message)
-            self.say("Please answer by yes or no?")
+            self.say("Please answer by yes or no?", cache=True)
             text = self.get_one_message()
             self.logger.debug(text)
         if text and "yes" in text:
