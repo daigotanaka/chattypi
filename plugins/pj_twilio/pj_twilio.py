@@ -117,9 +117,11 @@ class PjTwilio(object):
 
     def make_twilio_call(self, to_number):
         global pj_outgoing_call
+        url = "http://twimlets.com/forward?PhoneNumber=" + to_number
+        # First call my number then forward
         pj_outgoing_call = self.twilio_client.calls.create(
-            url=self.twilml_url,
-            to=to_number,
+            url=url,
+            to=self.my_number,
             from_=self.my_number,
             timeout=20,
             if_machine="Hangup")
